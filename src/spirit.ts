@@ -116,7 +116,7 @@ export class Spirit extends CoreObject {
     draw() {
 
 
-        const lax = game.avgDt / 16 * 5;
+        const lax = 16 / game.avgDt * 5;
         let gsize = this.graphicNodes.length - 1;
 
         for (let index = 0; index < this.graphicNodes.length; index++) {
