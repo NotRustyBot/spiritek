@@ -1,0 +1,43 @@
+import { CoreObject } from "./core"
+import { PolygonRepeller } from "./repeller"
+
+import stone1 from "./hitbox/stone1.json"
+import stone2 from "./hitbox/stone2.json"
+import { Sprite } from "pixi.js";
+import { asset, rotate } from "./util";
+import { game } from "./game";
+
+const hitboxLookup = {
+    "stone_1": stone1,
+    "stone_2": stone2,
+}
+
+declare module "./types" { interface ObjectKinds { asteroid: Asteroid } }
+export class Asteroid extends CoreObject {
+    repeller: PolygonRepeller;
+    sprite: Sprite;
+
+    constructor(stone: keyof typeof hitboxLookup, rotation = 0, x = 0, y = 0) {
+        super("asteroid");
+
+        this.sprite = new Sprite(asset(stone));
+        this.sprite.anchor.set(0.5);
+        this.sprite.rotation = rotation;
+        game.containers.stone.addChild(this.sprite);
+        this.repeller = new PolygonRepeller();
+        const polygon = rotate(hitboxLookup[stone], rotation);
+        this.repeller.setPolygon(polygon);
+
+        this.teleport(x, y);
+
+    }
+
+    teleport(x: number, y: number) {
+        this.x = x;
+        this.y = y;
+
+        this.sprite.position.set(x, y);
+        this.repeller.x = x;
+        this.repeller.y = y;
+    }
+}
