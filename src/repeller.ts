@@ -3,19 +3,22 @@ import { CoreObject } from "./core";
 import { Vector, Vectorlike } from "./vector";
 import pointInPolygon from "point-in-polygon"
 import { game } from "./game";
+import { Spirit } from "./spirit";
 
 
 declare module "./types" { interface ObjectKinds { repeller: IRepeller } }
-interface IRepeller {
+export interface IRepeller {
     position: Vector;
     strength: number;
+    emotional: boolean;
     check(pos: Vectorlike): boolean;
-    hit(strength: number): number;
+    hit(spirit: Spirit): void;
 }
 
 export class RangeRepeller extends CoreObject implements IRepeller {
     strength = 1;
     range = 200;
+    emotional = false;
     enabled = true;
     constructor() {
         super("repeller", "debug");
@@ -25,7 +28,7 @@ export class RangeRepeller extends CoreObject implements IRepeller {
         return this.enabled && (this.position.distanceSquared(pos) < this.range ** 2);
     }
 
-    hit = (strength: number) => { return strength };
+    hit = (spirit: Spirit) => { };
 
     debug(graphics: Graphics) {
         graphics.circle(this.x, this.y, this.range);
@@ -36,6 +39,7 @@ export class RangeRepeller extends CoreObject implements IRepeller {
 export class PolygonRepeller extends CoreObject implements IRepeller {
     strength = 1;
     enabled = true;
+    emotional = false;
     cachedPolygon = new Array<[number, number]>();
     sourcePolygon = new Array<Vectorlike>();
     boxSize = 0;
@@ -55,7 +59,7 @@ export class PolygonRepeller extends CoreObject implements IRepeller {
         return pointInPolygon([pos.x - this.x, pos.y - this.y], this.cachedPolygon);
     }
 
-    hit = (strength: number) => { return strength };
+    hit = (strength: Spirit) => { };
 
     debug(graphics: Graphics) {
 

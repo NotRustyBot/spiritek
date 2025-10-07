@@ -3,9 +3,13 @@ import { ObjectManager } from "./objectManager";
 import { Spirit } from "./spirit";
 import { PolygonRepeller, RangeRepeller } from "./repeller";
 import { Clocky } from "./clocky";
-import { RepellFlare } from "./repFlare";
+import { RepellFlare } from "./flare";
 import { Asteroid } from "./asteroid";
-import { KillFlare } from "./killFlare";
+import { WaveManager } from "./waveManager";
+import { Camera } from "./camera";
+import { ControlManager } from "./input";
+import { Ship } from "./ship";
+import { ObjectKinds } from "./types";
 
 export let game: Game;
 
@@ -37,9 +41,16 @@ export class Game {
     }
 
     objects = new ObjectManager();
+    controls: ControlManager;
+    ship: Ship;
+    camera: Camera;
+    selected: ObjectKinds["selectable"] | undefined = undefined;
 
     constructor(app: Application) {
         game = this;
+        this.controls = new ControlManager();
+        this.ship = new Ship();
+        this.camera = new Camera();
         this.app = app;
 
         this.app.ticker.add(this.update.bind(this))
@@ -54,24 +65,20 @@ export class Game {
         this.containers.world.addChild(this.containers.spirit);
         this.containers.world.addChild(this.debugGraphics);
 
+        new WaveManager();
 
-        const stone = new Asteroid("stone_1", 2, 1500, 900);
-        const stone2 = new Asteroid("stone_2", 5, 2000, 500);
-        const stone3 = new Asteroid("stone_2", 2, 1100, 1300);
+        const stone = new Asteroid("stone_1", 2, 500, -100);
+        const stone2 = new Asteroid("stone_2", 5, 1000, -500);
+        const stone3 = new Asteroid("stone_2", 2, 100, 300);
 
         for (let index = 0; index < 100; index++) {
             this.dtHistory.push(16);
         }
 
-        const f1 = new KillFlare().position.set(1800,750);
-        const f2 = new KillFlare().position.set(1300,1000);
-        const f3 = new KillFlare().position.set(1200,800);
-
-
         this.containers.world.scale.set(0.5);
     }
 
-    clocky = new Clocky(90);
+    clocky = new Clocky(0.9);
 
     update() {
         this.debugGraphics.clear();
@@ -94,13 +101,31 @@ export class Game {
             obj.draw();
         }
 
+        let nearest: undefined | ObjectKinds["selectable"] = undefined
+        let dist = 100;
+        for (const obj of [...this.objects.getAll("selectable")]) {
+            let useDist = this.controls.worldMouse.distance(obj);
+            if (useDist < dist + obj.size) {
+                nearest = obj;
+                dist = useDist;
+            }
+        }
+
+        if (nearest) {
+            nearest.hover?.();
+            if (this.controls.click) {
+                this.selected?.unselect?.();
+                nearest.select?.();
+                this.selected = nearest;
+            }
+        }
 
         for (const obj of [...this.objects.getAll("postprocess")]) {
             obj.postprocess();
         }
 
         for (const obj of [...this.objects.getAll("debug")]) {
-          //  obj.debug(this.debugGraphics);
+            //  obj.debug(this.debugGraphics);
         }
     }
 

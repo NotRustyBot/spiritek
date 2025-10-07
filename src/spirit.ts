@@ -4,6 +4,7 @@ import { game } from "./game";
 import { Vector, Vectorlike } from "./vector";
 import { Clocky } from "./clocky";
 import { asset } from "./util";
+import { IRepeller } from "./repeller";
 
 export class Spirit extends CoreObject {
     sprite: MeshRope;
@@ -14,10 +15,16 @@ export class Spirit extends CoreObject {
 
     nodeUpdate = new Clocky(100);
 
-    direction = { x: 0.1, y: 0 };
+    get direction() {
+        return this.waveManager.direction;
+    }
     graphicNodes = new Array<Vector>();
     power = 2;
     fadeAway: Clocky;
+
+    get waveManager() {
+        return game.objects.getFirst("WaveManager");
+    }
 
 
     constructor() {
@@ -47,9 +54,11 @@ export class Spirit extends CoreObject {
         game.containers.darkness.addChild(this.darkness);
         game.containers.spirit.addChild(this.sprite);
 
-        this.teleport({ x: 0, y: Math.random() * 5000 });
+        let a = this.waveManager.angle + Math.random() * this.waveManager.spread - this.waveManager.spread / 2;
 
-        this.fadeAway = Clocky.once(1000);
+        this.teleport(Vector.fromAngle(a).mult(-this.waveManager.size + 100));
+
+        this.fadeAway = Clocky.once(1);
         this.fadeAway.stop = true;
         this.fadeAway.during = () => {
             let visibility = 1 - this.fadeAway.progress;
@@ -68,7 +77,7 @@ export class Spirit extends CoreObject {
         }
     }
 
-    topSpeed = 0.75;
+    topSpeed = 0.5;
 
 
     update() {
@@ -78,24 +87,30 @@ export class Spirit extends CoreObject {
 
         this.velocity.add(this.direction);
 
-        if (this.position.x > 5000) {
+        if (this.position.lengthSquared() > this.waveManager.size ** 2) {
             this.destroy();
         }
 
-        if (this.velocity.length() > this.topSpeed) {
-            this.velocity.normalize(this.topSpeed);
+        let repellers = game.objects.getAll("repeller");
+
+        for (const repeller of repellers) {
+            if (!repeller.emotional) continue;
+            this.repellerCheck(repeller);
         }
 
-        for (const repeller of game.objects.getAll("repeller")) {
-            if (repeller.check(this)) {
-                const repell = repeller.position.diff(this).normalize(-repeller.strength / (Math.max(this.power, 1)));
-                this.velocity.add(repell);
-                if (this.power <= 1) {
-                    this.fadeAway.stop = false;
-                } else {
-                    this.power = repeller.hit(this.power);
-                }
-            }
+        let speed = this.velocity.length();
+
+        if (speed > this.topSpeed) {
+            this.velocity.mult(0.9);
+        }
+
+        if (speed < this.topSpeed * 0.5) {
+            this.velocity.normalize(this.topSpeed * 0.5);
+        }
+
+        for (const repeller of repellers) {
+            if (repeller.emotional) continue;
+            this.repellerCheck(repeller);
         }
 
         this.fadeAway.check();
@@ -105,6 +120,31 @@ export class Spirit extends CoreObject {
 
         this.nodes.unshift(this.position.clone());
         this.nodes.pop();
+    }
+
+    repellerCheck(repeller: IRepeller) {
+        if (repeller.check(this)) {
+            let strength = -repeller.strength;
+
+            if (this.power <= 1) {
+                this.fadeAway.stop = false;
+            } else {
+                repeller.hit(this);
+            }
+            
+            if (repeller.emotional) {
+                let speed = this.velocity.length();
+                const repell = repeller.position.diff(this).normalize(strength);
+                this.velocity.add(repell);
+                this.velocity.normalize(speed);
+
+            } else {
+                strength /= (Math.max(this.power, 1));
+                const repell = repeller.position.diff(this).normalize(strength);
+                this.velocity.add(repell);
+            }
+
+        }
     }
 
     destroy(): void {

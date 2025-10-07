@@ -58,7 +58,7 @@ export class Clocky {
     check() {
         if (this.stop) return false;
         this.during?.();
-        this.time += game.dt;
+        this.time += game.dts;
         if (this.time > this.limit) {
             this.time -= this.limit;
             if (--this.repeat <= 0) this.stop = true;
