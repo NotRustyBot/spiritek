@@ -9,8 +9,20 @@ const bundle = {
       src: "./img/flare.png"
     },
     {
+      alias: "floodlight",
+      src: "./img/floodlight.png"
+    },
+    {
       alias: "light",
       src: "./img/light.png"
+    },
+    {
+      alias: "projectile",
+      src: "./img/projectile.png"
+    },
+    {
+      alias: "ship",
+      src: "./img/ship.png"
     },
     {
       alias: "spirit",

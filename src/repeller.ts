@@ -11,6 +11,7 @@ export interface IRepeller {
     position: Vector;
     strength: number;
     emotional: boolean;
+    noStrength: boolean;
     check(pos: Vectorlike): boolean;
     hit(spirit: Spirit): void;
 }
@@ -20,6 +21,7 @@ export class RangeRepeller extends CoreObject implements IRepeller {
     range = 200;
     emotional = false;
     enabled = true;
+    noStrength = false;
     constructor() {
         super("repeller", "debug");
     }
@@ -40,6 +42,7 @@ export class PolygonRepeller extends CoreObject implements IRepeller {
     strength = 1;
     enabled = true;
     emotional = false;
+    noStrength = false;
     cachedPolygon = new Array<[number, number]>();
     sourcePolygon = new Array<Vectorlike>();
     boxSize = 0;

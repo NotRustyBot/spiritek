@@ -6,6 +6,8 @@ import { Clocky } from "./clocky";
 import { asset } from "./util";
 import { IRepeller } from "./repeller";
 
+
+declare module "./types" { interface ObjectKinds { spirit: Spirit } }
 export class Spirit extends CoreObject {
     sprite: MeshRope;
     darkness: Sprite;
@@ -28,7 +30,7 @@ export class Spirit extends CoreObject {
 
 
     constructor() {
-        super("updatable", "drawable");
+        super("updatable", "drawable", "spirit");
 
         const v = this.position.clone();
         for (let index = 0; index < 100; index++) {
@@ -131,19 +133,33 @@ export class Spirit extends CoreObject {
             } else {
                 repeller.hit(this);
             }
-            
-            if (repeller.emotional) {
-                let speed = this.velocity.length();
-                const repell = repeller.position.diff(this).normalize(strength);
-                this.velocity.add(repell);
-                this.velocity.normalize(speed);
 
-            } else {
-                strength /= (Math.max(this.power, 1));
-                const repell = repeller.position.diff(this).normalize(strength);
-                this.velocity.add(repell);
+            if (strength != 0 && !repeller.noStrength) {
+                if (repeller.emotional) {
+                    let speed = this.velocity.length();
+                    const repell = repeller.position.diff(this).normalize(strength);
+                    this.velocity.add(repell);
+                    this.velocity.normalize(speed);
+
+                } else {
+                    strength /= (Math.max(this.power, 1));
+                    this.affect(strength, repeller.position)
+                }
             }
 
+        }
+    }
+
+    affect(strength: number, from: Vectorlike) {
+        const repell = this.position.diff(from).normalize(-strength);
+        this.velocity.add(repell);
+    }
+
+    projectileHit(v: number) {
+        this.power -= v;
+        if (this.power <= 1) {
+            this.fadeAway.stop = false;
+            this.fadeAway.limit = 0.25;
         }
     }
 

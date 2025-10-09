@@ -1,4 +1,4 @@
-import { Container, Graphics, type Application } from "pixi.js";
+import { BlurFilter, Container, Graphics, type Application } from "pixi.js";
 import { ObjectManager } from "./objectManager";
 import { Spirit } from "./spirit";
 import { PolygonRepeller, RangeRepeller } from "./repeller";
@@ -9,7 +9,9 @@ import { WaveManager } from "./waveManager";
 import { Camera } from "./camera";
 import { ControlManager } from "./input";
 import { Ship } from "./ship";
-import { ObjectKinds } from "./types";
+import { ISelectable, ObjectKinds } from "./types";
+import { Projectile } from "./projectile";
+import { GlowFilter, OutlineFilter } from "pixi-filters";
 
 export let game: Game;
 
@@ -37,6 +39,8 @@ export class Game {
         stone: new Container(),
         light: new Container(),
         items: new Container(),
+        ship: new Container(),
+        projectile: new Container(),
         spirit: new Container(),
     }
 
@@ -44,7 +48,8 @@ export class Game {
     controls: ControlManager;
     ship: Ship;
     camera: Camera;
-    selected: ObjectKinds["selectable"] | undefined = undefined;
+    selected: ISelectable | undefined = undefined;
+    hovered: ISelectable | undefined = undefined;
 
     constructor(app: Application) {
         game = this;
@@ -62,8 +67,12 @@ export class Game {
         this.containers.world.addChild(this.containers.stone);
         this.containers.world.addChild(this.containers.light);
         this.containers.world.addChild(this.containers.items);
+        this.containers.world.addChild(this.containers.ship);
+        this.containers.world.addChild(this.containers.projectile);
         this.containers.world.addChild(this.containers.spirit);
         this.containers.world.addChild(this.debugGraphics);
+
+        this.containers.light.filters = [new BlurFilter({})]
 
         new WaveManager();
 
@@ -78,7 +87,7 @@ export class Game {
         this.containers.world.scale.set(0.5);
     }
 
-    clocky = new Clocky(0.9);
+    clocky = new Clocky(0.1);
 
     update() {
         this.debugGraphics.clear();
@@ -86,7 +95,7 @@ export class Game {
         this.dtHistory.unshift();
         this.avgDt = this.dtHistory.reduce((a, c) => { return a + c }) / this.dtHistory.length;
 
-        this.clocky.check() && new Spirit();
+         this.clocky.check() && new Spirit();
 
         for (const obj of [...this.objects.getAll("preupdate")]) {
             obj.preupdate();
@@ -101,23 +110,31 @@ export class Game {
             obj.draw();
         }
 
-        let nearest: undefined | ObjectKinds["selectable"] = undefined
+        let nearest: undefined | ISelectable = undefined
         let dist = 100;
         for (const obj of [...this.objects.getAll("selectable")]) {
-            let useDist = this.controls.worldMouse.distance(obj);
-            if (useDist < dist + obj.size) {
+            let useDist = this.controls.worldMouse.distance(obj) - obj.size;
+            if (useDist < dist) {
                 nearest = obj;
                 dist = useDist;
             }
         }
 
         if (nearest) {
-            nearest.hover?.();
+            if (nearest != this.hovered) {
+                this.hovered?.unhover?.();
+                this.hovered = nearest;
+                this.hovered.hover?.();
+            }
+
             if (this.controls.click) {
                 this.selected?.unselect?.();
                 nearest.select?.();
                 this.selected = nearest;
             }
+        } else {
+            this.hovered?.unhover?.();
+            this.hovered = undefined;
         }
 
         for (const obj of [...this.objects.getAll("postprocess")]) {
@@ -125,7 +142,7 @@ export class Game {
         }
 
         for (const obj of [...this.objects.getAll("debug")]) {
-            //  obj.debug(this.debugGraphics);
+            //obj.debug(this.debugGraphics);
         }
     }
 

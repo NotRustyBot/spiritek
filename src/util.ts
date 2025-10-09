@@ -42,16 +42,23 @@ export function rotate(polygon: Vectorlike[], rotation: number) {
     return polygon.map(p => Vector.fromLike(p).rotate(rotation));
 }
 
-export function forshapen(graphics: Graphics) {
-    let first = true;
-    return (vectorlike: Vectorlike) => {
-        if (first) {
-            first = false;
-            graphics.moveTo(vectorlike.x, vectorlike.y);
-        } else {
-            graphics.lineTo(vectorlike.x, vectorlike.y);
-        }
-    }
+
+export function angleInterpolate(current: number, target: number, step: number) {
+    current = fixAngle(current);
+    target = fixAngle(target);
+
+    if (target < current) target += Math.PI * 2;
+
+    if (target - current <= step) return target;
+
+    if (target - current > Math.PI) return current - step;
+    return current + step;
+}
+
+function fixAngle(angle: number) {
+    angle = angle % (Math.PI * 2);
+    if (angle < 0) angle += Math.PI * 2;
+    return angle;
 }
 
 export function interpolateColors(a: ColorSource, b: ColorSource, ratio: number) {

@@ -8,8 +8,10 @@ export interface ObjectKinds {
     postprocess: { postprocess(): void }
     scenebound: { destroy(): void }
     debug: { debug(graphics: Graphics): void }
-    selectable: CoreObject & { select?(): void, unselect?(): void, hover?(): void, size: number }
+    selectable: ISelectable;
 }
+
+export type ISelectable = CoreObject & { select?(): void, unselect?(): void, hover?(): void, unhover?(): void, size: number }
 
 export type ObjectKind = keyof ObjectKinds;
 

@@ -5,8 +5,10 @@ import { RangeRepeller } from "./repeller";
 import { Clocky } from "./clocky";
 import { game } from "./game";
 import { Spirit } from "./spirit";
+import { ISelectable } from "./types";
+import { OutlineFilter } from "pixi-filters";
 
-export class FlareCore extends CoreObject {
+export class FlareCore extends CoreObject implements ISelectable {
     sprite: Sprite;
     glow: Sprite;
     repeller = new RangeRepeller();
@@ -15,10 +17,11 @@ export class FlareCore extends CoreObject {
 
     strength = 0;
 
+
     range = 3000;
     color = 0xffff00;
     constructor() {
-        super("updatable", "drawable");
+        super("updatable", "drawable", "selectable");
         this.sprite = new Sprite(asset("flare"));
         game.containers.items.addChild(this.sprite);
         this.sprite.rotation = Math.random() * Math.PI * 2;
@@ -39,10 +42,19 @@ export class FlareCore extends CoreObject {
                 }
             }
         ]);
+
+        this.update();
     }
 
+    size = 50;
 
+    hover() {
+        this.sprite.filters = [new OutlineFilter({ color: 0xffffff, thickness: 2 })];
+    }
 
+    unhover() {
+        this.sprite.filters = [];
+    }
 
     hit(power: Spirit) { }
 
@@ -105,3 +117,4 @@ export class AttractFlare extends FlareCore { // test
         this.strength -= 0.01;
     }
 }
+
