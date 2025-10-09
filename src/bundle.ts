@@ -5,6 +5,14 @@ const bundle = {
   name: "bundle",
   assets: [
     {
+      alias: "blurcircle",
+      src: "./img/blurcircle.png"
+    },
+    {
+      alias: "circle",
+      src: "./img/circle.png"
+    },
+    {
       alias: "flare",
       src: "./img/flare.png"
     },
@@ -17,6 +25,10 @@ const bundle = {
       src: "./img/light.png"
     },
     {
+      alias: "noisy-sqare",
+      src: "./img/noisy-sqare.png"
+    },
+    {
       alias: "projectile",
       src: "./img/projectile.png"
     },
@@ -27,6 +39,14 @@ const bundle = {
     {
       alias: "spirit",
       src: "./img/spirit.png"
+    },
+    {
+      alias: "spotlight",
+      src: "./img/spotlight.png"
+    },
+    {
+      alias: "sqare",
+      src: "./img/sqare.png"
     },
     {
       alias: "stone_1",

@@ -34,6 +34,7 @@ export class Game {
     debugGraphics = new Graphics();
 
     containers = {
+        backdrop: new Container(),
         world: new Container(),
         darkness: new Container(),
         stone: new Container(),
@@ -42,6 +43,7 @@ export class Game {
         ship: new Container(),
         projectile: new Container(),
         spirit: new Container(),
+        overlay: new Container(),
     }
 
     objects = new ObjectManager();
@@ -62,6 +64,7 @@ export class Game {
     }
 
     init() {
+        this.app.stage.addChild(this.containers.backdrop);
         this.app.stage.addChild(this.containers.world);
         this.containers.world.addChild(this.containers.darkness);
         this.containers.world.addChild(this.containers.stone);
@@ -71,6 +74,8 @@ export class Game {
         this.containers.world.addChild(this.containers.projectile);
         this.containers.world.addChild(this.containers.spirit);
         this.containers.world.addChild(this.debugGraphics);
+        this.app.stage.addChild(this.containers.overlay);
+
 
         this.containers.light.filters = [new BlurFilter({})]
 
@@ -87,7 +92,6 @@ export class Game {
         this.containers.world.scale.set(0.5);
     }
 
-    clocky = new Clocky(0.9);
 
     update() {
         this.debugGraphics.clear();
@@ -95,7 +99,7 @@ export class Game {
         this.dtHistory.unshift();
         this.avgDt = this.dtHistory.reduce((a, c) => { return a + c }) / this.dtHistory.length;
 
-         this.clocky.check() && new Spirit();
+
 
         for (const obj of [...this.objects.getAll("preupdate")]) {
             obj.preupdate();
@@ -111,10 +115,10 @@ export class Game {
         }
 
         let nearest: undefined | ISelectable = undefined
-        let dist = 100;
+        let dist = 200;
         for (const obj of [...this.objects.getAll("selectable")]) {
-            let useDist = this.controls.worldMouse.distance(obj) - obj.size;
-            if (useDist < dist) {
+            let useDist = this.controls.worldMouse.distance(obj);
+            if (useDist < dist && obj.size > useDist) {
                 nearest = obj;
                 dist = useDist;
             }

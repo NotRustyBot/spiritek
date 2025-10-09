@@ -36,7 +36,7 @@ export class Camera extends CoreObject {
             dist -= this.height / 3;
             dist /= this.height;
             dist = Math.min(dist * 5, 1);
-           // this.position.add(game.controls.mousePosition.diff(this.center).normalize(10 * dist / this.zoom));
+            this.position.add(game.controls.mousePosition.diff(this.center).normalize(10 * dist / this.zoom));
         }
 
         if (game.controls.wheel != 0) {

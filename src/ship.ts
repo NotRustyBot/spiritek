@@ -17,6 +17,7 @@ export class Ship extends CoreObject {
     sprite: Sprite;
 
     spotlight = new Spotlight();
+    spotlight2 = new Spotlight();
 
     private _rotation = 0;
     get rotation() {
@@ -46,6 +47,13 @@ export class Ship extends CoreObject {
         this.repeller = new PolygonRepeller();
         this.repeller.setPolygon(shipHitbox);
 
+        this.spotlight.y = 400;
+
+
+        this.spotlight2.x = 1000;
+        this.spotlight2.y = -500;
+
+
         this.x = 1000;
         this.y = 500;
         this.rotation = -1;
@@ -56,7 +64,8 @@ export class Ship extends CoreObject {
         SpawnRepellFlare,
         SpawnKillFlare,
         SpawnAttractFlare,
-        MoveSpotlight
+        MoveSpotlight,
+        MoveSpotlight2,
     ]
 
     setAction(index = 0) {
@@ -75,6 +84,8 @@ export class Ship extends CoreObject {
             this.setAction(2);
         } else if (game.controls.pressed["Digit4"]) {
             this.setAction(3);
+        } else if (game.controls.pressed["Digit5"]) {
+            this.setAction(4);
         }
 
 
@@ -146,6 +157,14 @@ class MoveSpotlight extends ShipAction {
     override update() {
         if (game.controls.pointerDown) {
             this.ship.spotlight.targetPosition.set(game.controls.worldMouse.clone());
+        }
+    }
+}
+
+class MoveSpotlight2 extends ShipAction {
+    override update() {
+        if (game.controls.pointerDown) {
+            this.ship.spotlight2.targetPosition.set(game.controls.worldMouse.clone());
         }
     }
 }

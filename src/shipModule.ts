@@ -6,6 +6,8 @@ import { angleInterpolate, asset, rotate } from "./util";
 import { game } from "./game";
 import { Spirit } from "./spirit";
 import { Clocky } from "./clocky";
+import { ISelectable } from "./types";
+import { OutlineFilter } from "pixi-filters";
 
 export class ShipModule {
     slot: number;
@@ -14,10 +16,13 @@ export class ShipModule {
     }
 }
 
-export class Spotlight extends CoreObject {
+export class Spotlight extends CoreObject implements ISelectable {
     repeller: PolygonRepeller;
     light: Sprite;
     sprite: Sprite;
+
+    size = 100; // selectable
+
 
     polygon: Array<Vectorlike>;
 
@@ -26,10 +31,13 @@ export class Spotlight extends CoreObject {
     targetPosition = new Vector();
 
     constructor() {
-        super("updatable", "drawable");
+        super("updatable", "drawable", "selectable");
         this.light = new Sprite(asset("floodlight"));
         this.light.anchor.set(0, 0.5);
         game.containers.light.addChild(this.light);
+        this.sprite = new Sprite(asset("spotlight"));
+        this.sprite.anchor.set( 0.5);
+        game.containers.items.addChild(this.sprite);
         this.repeller = new PolygonRepeller();
         this.polygon = [
             {
@@ -68,8 +76,23 @@ export class Spotlight extends CoreObject {
         }
     }
 
+    select?(): void {
+        game.ship.setAction()
+    }
+    unselect?(): void {
+        throw new Error("Method not implemented.");
+    }
+
+    hover() {
+        this.sprite.filters = [new OutlineFilter({ color: 0xffffff, thickness: 2 })];
+    }
+
+    unhover() {
+        this.sprite.filters = [];
+    }
+
     update() {
-        const targetAngle = this.targetPosition.toAngle();
+        const targetAngle = this.targetPosition.diff(this.position).toAngle();
 
         if (this.aimAngle != targetAngle) {
             this.aimAngle = angleInterpolate(this.aimAngle, targetAngle, game.dts)
@@ -79,8 +102,7 @@ export class Spotlight extends CoreObject {
         this.repeller.strength += game.dts;
         if (this.repeller.strength > 1) this.repeller.strength = 1;
 
-        const current = Vector.fromAngle(this.aimAngle);
-        this.repeller.position.set(current);
+        this.repeller.position.set(this);
 
     }
 
@@ -88,7 +110,9 @@ export class Spotlight extends CoreObject {
 
     draw() {
         this.light.position.set(this.repeller.x, this.repeller.y);
+        this.sprite.position.set(this.repeller.x, this.repeller.y);
         if (this.blinker.check()) this.light.alpha = 0.2 * (1 + (1 - this.repeller.strength) * Math.random());
         this.light.rotation = this.aimAngle;
+        this.sprite.rotation = this.aimAngle;
     }
 }
