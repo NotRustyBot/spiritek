@@ -64,7 +64,7 @@ export class Ship extends CoreObject {
         this.action = new this.actions[index](this);
     }
 
-    clocky = new Clocky(0.1);
+    clocky = new Clocky(1);
 
     update() {
         if (game.controls.pressed["Digit1"]) {

@@ -87,7 +87,7 @@ export class Game {
         this.containers.world.scale.set(0.5);
     }
 
-    clocky = new Clocky(0.1);
+    clocky = new Clocky(0.9);
 
     update() {
         this.debugGraphics.clear();
