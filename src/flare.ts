@@ -48,7 +48,7 @@ export class FlareCore extends CoreObject implements ISelectable {
             }
         ]);
 
-        this.light = new Light({ position: new Vector(this.x, this.y), range: this.range / 10, color: CustomColor.fromPixi(this.color), intensity: 1, width: 4 });
+        this.light = new Light({ position: new Vector(this.x, this.y), range: this.range / 2, color: CustomColor.fromPixi(this.color), intensity: 1, width: 4 });
 
         this.update();
     }

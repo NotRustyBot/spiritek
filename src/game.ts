@@ -53,7 +53,7 @@ export class Game {
     }
 
     objects = new ObjectManager();
-    controls: ControlManager;
+    controls!: ControlManager;
     ship!: Ship;
     camera: Camera;
     uiManager!: UiManager;
@@ -66,9 +66,7 @@ export class Game {
 
     constructor(app: Application) {
         game = this;
-        this.controls = new ControlManager();
 
-        this.camera = new Camera();
         this.app = app;
         this.controls = new ControlManager();
         this.camera = new Camera();
@@ -122,7 +120,6 @@ export class Game {
 
         this.uiManager = new UiManager();
         this.orderManager = new OrderManager();
-        this.ship = new Ship();
 
         astro.select();
         game.uiManager.updateObjectOptions(astro.uiData);
