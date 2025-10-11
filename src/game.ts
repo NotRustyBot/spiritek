@@ -11,13 +11,14 @@ import { ControlManager, MousePriority } from "./input";
 import { Ship } from "./ship";
 import { ISelectable, ObjectKinds } from "./types";
 import { Projectile } from "./projectile";
-import { GlowFilter, OutlineFilter } from "pixi-filters";
+import { GlowFilter, OutlineFilter, PixelateFilter } from "pixi-filters";
 import scene from "./scenes/objects.json"
 import { Installation, TurretInstallation } from "./installation";
 import { Astronaut } from "./astronaut";
 import { TestRitual } from "./ritual";
-import { ObjectOptions } from "./ui/objectOptions";
-import { UI } from "./ui/UI";
+import { ObjectOptions, ObjectOptionsData } from "./ui/objectOptions";
+import { UI, UiManager } from "./ui/UI";
+import { OrderManager } from "./orderManager";
 
 export let game: Game;
 
@@ -58,18 +59,19 @@ export class Game {
 
     objects = new ObjectManager();
     controls: ControlManager;
-    ship: Ship;
+    ship!: Ship;
     camera: Camera;
+    uiManager!: UiManager;
+    orderManager!: OrderManager;
     selected: ISelectable | undefined = undefined;
     hovered: ISelectable | undefined = undefined;
 
 
     constructor(app: Application) {
         game = this;
-        this.controls = new ControlManager();
-        this.ship = new Ship();
-        this.camera = new Camera();
         this.app = app;
+        this.controls = new ControlManager();
+        this.camera = new Camera();
 
         this.app.ticker.add(this.update.bind(this))
     }
@@ -88,10 +90,11 @@ export class Game {
         this.containers.world.addChild(this.containers.projectile);
         this.containers.world.addChild(this.containers.spirit);
         this.containers.world.addChild(this.debugGraphics);
-        this.app.stage.addChild(this.containers.overlay);
+        this.containers.world.addChild(this.containers.overlay);
 
 
         this.containers.light.filters = [new BlurFilter({})]
+        this.containers.overlay.alpha = 0.25;
 
         new WaveManager();
 
@@ -107,8 +110,12 @@ export class Game {
 
         const astro = new Astronaut();
 
-        document.body.appendChild(UI());
+        this.uiManager = new UiManager();
+        this.orderManager = new OrderManager();
+        this.ship = new Ship();
 
+        astro.select();
+        game.uiManager.updateObjectOptions(astro.uiData);
     }
 
 
@@ -149,6 +156,12 @@ export class Game {
                     this.selected?.unselect?.();
                     nearest.select?.();
                     this.selected = nearest;
+                    if ("uiData" in nearest) {
+                        const data = nearest.uiData;
+                        game.uiManager.updateObjectOptions(data as ObjectOptionsData);
+                    } else {
+                        game.uiManager.updateObjectOptions();
+                    }
                     return true;
                 }
             } else {
@@ -165,6 +178,12 @@ export class Game {
 
         this.camera.update();
         this.controls.update();
+        if (this.controls.rightDown) {
+            this.orderManager.cancel();
+            this.selected?.unselect?.();
+            this.selected = undefined;
+            game.uiManager.updateObjectOptions();
+        }
 
         for (const obj of [...this.objects.getAll("drawable")]) {
             obj.draw();

@@ -19,7 +19,7 @@ export class FlareCore extends CoreObject implements ISelectable {
     strength = 0;
 
 
-    range = 3000;
+    get range() { return 500 };
     color = 0xffff00;
     constructor() {
         super("updatable", "drawable", "selectable");
@@ -84,7 +84,7 @@ export class FlareCore extends CoreObject implements ISelectable {
 
 export class RepellFlare extends FlareCore {
     color = 0xffff00;
-    range = 500;
+    override get range() { return 500 };
 
     override hit(spirit: Spirit) {
         this.strength -= 0.05;
@@ -95,7 +95,7 @@ export class RepellFlare extends FlareCore {
 
 export class KillFlare extends FlareCore {
     color = 0xff0000;
-    range = 300;
+    override get range() { return 300 };
 
     override hit(spirit: Spirit) {
         this.strength -= 0.1;
@@ -105,7 +105,7 @@ export class KillFlare extends FlareCore {
 
 export class AttractFlare extends FlareCore { // test
     color = 0xff00ff;
-    range = 800;
+    override get range() { return 800 };
 
     constructor() {
         super();

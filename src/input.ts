@@ -5,7 +5,8 @@ import { Vector } from "./vector";
 export enum MousePriority {
     order = 0,
     select = 1,
-    ui = 2,
+    selectOrderTarget = 2,
+    ui = 3,
 }
 
 export class ControlManager {
@@ -15,6 +16,7 @@ export class ControlManager {
     mousePosition = new Vector();
     pointerDown = false;
     clicked = false;
+    rightClicked = false;
     rightDown = false;
     wheel = 0;
     get worldMouse() {
@@ -22,66 +24,78 @@ export class ControlManager {
         return this.mousePosition.clone().sub(cam.center).mult(1 / cam.zoom).add(cam);
     }
     constructor() {
-        document.addEventListener("keydown", (k) => {
+        const element = game.app.canvas;
+
+        element.addEventListener("keydown", (k) => {
             console.log(k.code);
 
             this.pressed[k.code] = true;
             this.held[k.code] = true;
         });
 
-        document.addEventListener("keyup", (k) => {
+        element.addEventListener("keyup", (k) => {
             this.released[k.code] = true;
             delete this.held[k.code];
         });
 
-        document.addEventListener("mousemove", (e) => {
+        element.addEventListener("mousemove", (e) => {
             this.mousePosition.set(e);
             this.pointerDown = mouseButtonPressed(e, "left");
             this.rightDown = mouseButtonPressed(e, "right");
         });
 
-        document.addEventListener("contextmenu", (e) => { e.preventDefault() });
+        element.addEventListener("contextmenu", (e) => { e.preventDefault() });
 
-        document.addEventListener("mouseup", (e) => {
+        element.addEventListener("mouseup", (e) => {
             this.pointerDown = mouseButtonPressed(e, "left");
             this.rightDown = mouseButtonPressed(e, "right");
 
         });
 
-        document.addEventListener("mousedown", (e) => {
+        element.addEventListener("mousedown", (e) => {
             this.pointerDown = mouseButtonPressed(e, "left");
             this.rightDown = mouseButtonPressed(e, "right");
-            this.clicked = true;
+            this.clicked = this.pointerDown;
+            this.rightClicked = this.rightDown;
         });
 
-        document.addEventListener("wheel", (e) => {
+        element.addEventListener("wheel", (e) => {
             this.wheel = e.deltaY;
         })
     }
 
-    requestMouse(priority: MousePriority, action: () => boolean | void) {
-        this.clickRequests.push({ action, priority });
+    requestMouse(priority: MousePriority, action: () => boolean | void, cr?: any) {
+        this.clickRequests.push({ action, priority, cancelationReference: cr });
     }
 
-    requestClick(priority: MousePriority, action: () => boolean | void) {
+    requestClick(priority: MousePriority, action: () => boolean | void, cr?: any) {
         this.requestMouse(priority, () => {
             if (!this.clicked) return false;
-            action();
+            let retval = action();
             game.controls.clicked = false;
             game.controls.pointerDown = false;
-        })
+            return retval;
+        }, cr)
     }
 
-    requestPointerDown(priority: MousePriority, action: () => boolean | void) {
+    requestPointerDown(priority: MousePriority, action: () => boolean | void, cr?: any) {
         this.requestMouse(priority, () => {
             if (!this.pointerDown) return false;
-            action();
-        })
+            return action();
+        }, cr)
     }
 
+    cancelMouseRequest(cr: any) {
+        let index = this.clickRequests.indexOf(cr);
+        if (index == -1) return;
+        this.clickRequests.splice(index, 1);
+    }
 
-
-    clickRequests = new Array<{ action: () => boolean | void, priority: MousePriority }>;
+    clickRequests = new Array<{
+        action: () => boolean | void,
+        priority: MousePriority,
+        cancelationReference?: any
+    }>;
 
     update() {
         this.pressed = {};

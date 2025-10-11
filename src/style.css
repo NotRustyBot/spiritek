@@ -1,7 +1,13 @@
+* {
+    box-sizing: border-box;
+}
+
 body {
     margin: 0;
     padding: 0;
     overflow: hidden;
+    font-family: Verdana, Geneva, Tahoma, sans-serif;
+    user-select: none;
 }
 
 #app {
@@ -10,4 +16,87 @@ body {
     height: 100vh;
     top: 0;
     left: 0;
+    pointer-events: none;
+}
+
+#object-options {
+    background-color: #111;
+    padding: 10px;
+    width: 325px;
+    color: white;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.option-container {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.object-action {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    border: 1px solid black;
+    padding: 5px;
+    cursor: pointer;
+    transition: 300ms;
+    pointer-events: all;
+}
+
+.object-action:hover {
+    background-color: #222;
+}
+
+.object-action.disabled {
+    background-color: #330000;
+    cursor: default;
+}
+
+.object-action.active {
+    background-color: #005500;
+
+}
+
+
+.object-action img {
+    width: 32px;
+    height: 32px;
+}
+
+.item-action {
+    position: relative;
+    pointer-events: all;
+    display: flex;
+    flex-direction: column;
+    width: 100px;
+    border: 1px solid black;
+    padding: 2px;
+}
+
+.item-name {
+    font-size: 12px;
+    text-align: center;
+}
+
+.item-action .item-count {
+    position: absolute;
+    top: 60px;
+    right: 0;
+    color: #555;
+    
+}
+
+.item-action img {
+    width: 96px;
+    height: 96px;
+}
+
+
+.item-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2px;
 }

@@ -11,6 +11,8 @@ import { Vectorlike, Vector } from "./vector";
 import { ISelectableBase } from "./select";
 import { FlareCore } from "./flare";
 import { MousePriority } from "./input";
+import { SpotlightTarget } from "./orderManager";
+import { ObjectOptionsData } from "./ui/objectOptions";
 
 
 export class Spotlight extends CoreObject implements ISelectable {
@@ -26,6 +28,12 @@ export class Spotlight extends CoreObject implements ISelectable {
     aimAngle = 0;
 
     targetPosition = new Vector();
+
+    get uiData(): ObjectOptionsData {
+        return {
+            name: "Spotlight",
+        }
+    }
 
     constructor() {
         super("updatable", "drawable", "selectable");
@@ -74,7 +82,7 @@ export class Spotlight extends CoreObject implements ISelectable {
     }
 
     select(): void {
-
+        game.orderManager.newOrder(new SpotlightTarget(this));
     }
 
     hover() {
@@ -102,14 +110,6 @@ export class Spotlight extends CoreObject implements ISelectable {
         if (this.repeller.strength > 1) this.repeller.strength = 1;
 
         this.repeller.position.set(this);
-
-
-
-        if (game.selected == this) {
-            game.controls.requestPointerDown(MousePriority.order, () => {
-                this.targetPosition.set(game.controls.worldMouse.clone());
-            })
-        }
 
     }
 

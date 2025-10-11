@@ -1,5 +1,6 @@
 import { Graphics } from "pixi.js"
 import { CoreObject } from "./core"
+import { ObjectOptionsData } from "./ui/objectOptions"
 
 export interface ObjectKinds {
     preupdate: { preupdate(): void }
@@ -11,7 +12,7 @@ export interface ObjectKinds {
     selectable: ISelectable;
 }
 
-export type ISelectable = CoreObject & { select?(): void, unselect?(): void, hover?(): void, unhover?(): void, size: number }
+export type ISelectable = CoreObject & { uiData?: ObjectOptionsData, select?(): void, unselect?(): void, hover?(): void, unhover?(): void, size: number }
 
 export type ObjectKind = keyof ObjectKinds;
 

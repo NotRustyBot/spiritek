@@ -17,9 +17,10 @@ import { MousePriority } from "./input";
 import { ISelectable } from "./types";
 import { ISelectableBase } from "./select";
 import { TestRitual } from "./ritual";
+import { ObjectOptionsData } from "./ui/objectOptions";
+import { TranslateTo, RotateTo, MoveTo } from "./orderManager";
 
 export class Ship extends CoreObject implements ISelectable {
-    action = new SpawnRepellFlare(this);
     repeller: PolygonRepeller;
     attractor: RangeRepeller;
     sprite: Sprite;
@@ -27,6 +28,39 @@ export class Ship extends CoreObject implements ISelectable {
     spotlightL: ShipFloodlight;
     spotlightR: ShipFloodlight;
     turret: ShipTurret;
+
+    uiData: ObjectOptionsData = {
+        name: "Spiritek",
+        actions: [
+            {
+                name: "Move",
+                icon: "img/ship.png",
+                active: () => (game.orderManager.currentOrder instanceof MoveTo),
+                action: () => {
+                    const order = new MoveTo();
+                    game.orderManager.newOrder(order);
+                }
+            },
+            {
+                name: "Translate",
+                icon: "img/ship.png",
+                active: () => (game.orderManager.currentOrder instanceof TranslateTo),
+                action: () => {
+                    const order = new TranslateTo();
+                    game.orderManager.newOrder(order);
+                }
+            },
+            {
+                name: "Rotate",
+                icon: "img/ship.png",
+                active: () => (game.orderManager.currentOrder instanceof RotateTo),
+                action: () => {
+                    const order = new RotateTo();
+                    game.orderManager.newOrder(order);
+                }
+            }
+        ]
+    }
 
     private _rotation = 0;
     get rotation() {
@@ -69,45 +103,14 @@ export class Ship extends CoreObject implements ISelectable {
 
     size = 500;
 
-
-    actions = [
-        SpawnRepellFlare,
-        SpawnKillFlare,
-        PlaceTurret,
-        PlaceSpotlight,
-        RotateTo,
-        MoveTo,
-        SpawnRitual
-    ]
-
-    setAction(index = 0) {
-        game.selected?.unselect?.();
-        game.selected = this;
-        this.action.destroy();
-        this.action = new this.actions[index](this);
+    select(): void {
+        const order = new MoveTo();
+        game.orderManager.newOrder(order);
     }
 
     clocky = new Clocky(1);
 
     update() {
-        if (game.controls.pressed["Digit1"]) {
-            this.setAction(0);
-        } else if (game.controls.pressed["Digit2"]) {
-            this.setAction(1);
-        } else if (game.controls.pressed["Digit3"]) {
-            this.setAction(2);
-        } else if (game.controls.pressed["Digit4"]) {
-            this.setAction(3);
-        } else if (game.controls.pressed["Digit5"]) {
-            this.setAction(4);
-        } else if (game.controls.pressed["Digit6"]) {
-            this.setAction(5);
-        } else if (game.controls.pressed["Digit7"]) {
-            this.setAction(6);
-        }
-
-        if (game.selected == this) this.action.update();
-
         this.repeller.position.set(this);
         this.attractor.position.set(this);
         this.sprite.position.set(this.x, this.y);
@@ -133,89 +136,6 @@ export class Ship extends CoreObject implements ISelectable {
         this.spotlightL.update();
         this.spotlightR.update();
         this.turret.update();
-    }
-}
-
-class ShipAction {
-    ship: Ship;
-    module?: ShipModule;
-    constructor(ship: Ship, module?: ShipModule) {
-        this.ship = ship;
-        this.module = module;
-    }
-
-    update() { }
-
-    destroy() { }
-}
-
-class SpawnRepellFlare extends ShipAction {
-    override update() {
-        game.controls.requestClick(MousePriority.order, () => {
-            const flare = new RepellFlare();
-            flare.position = game.controls.worldMouse.clone();
-        });
-    }
-}
-
-class SpawnKillFlare extends ShipAction {
-    override update() {
-        game.controls.requestClick(MousePriority.order, () => {
-            const flare = new KillFlare();
-            flare.position = game.controls.worldMouse.clone();
-        });
-    }
-}
-
-class PlaceTurret extends ShipAction {
-    override update() {
-        game.controls.requestClick(MousePriority.order, () => {
-            const ast = Array.from(game.objects.getAll("asteroid")).reduce(toNearest(game.controls.worldMouse));
-            const turret = new TurretInstallation(game.controls.worldMouse, ast);
-        });
-    }
-}
-
-class PlaceSpotlight extends ShipAction {
-    override update() {
-        game.controls.requestClick(MousePriority.order, () => {
-            const ast = Array.from(game.objects.getAll("asteroid")).reduce(toNearest(game.controls.worldMouse));
-            const turret = new SpotlightInstallation(game.controls.worldMouse, ast);
-        });
-    }
-}
-
-class SpawnAttractFlare extends ShipAction {
-    override update() {
-        game.controls.requestClick(MousePriority.order, () => {
-            const flare = new AttractFlare();
-            flare.position = game.controls.worldMouse.clone();
-        });
-    }
-}
-
-class SpawnRitual extends ShipAction {
-    override update() {
-        game.controls.requestClick(MousePriority.order, () => {
-            const ritual = new TestRitual();
-            ritual.position = game.controls.worldMouse.clone();
-        });
-    }
-}
-
-class RotateTo extends ShipAction {
-    override update() {
-        game.controls.requestPointerDown(MousePriority.order, () => {
-            this.ship.targetRotation = game.controls.worldMouse.diff(this.ship).toAngle();
-        });
-    }
-}
-
-class MoveTo extends ShipAction {
-    override update() {
-        game.controls.requestPointerDown(MousePriority.order, () => {
-            this.ship.targetPosition.set(game.controls.worldMouse);
-        });
     }
 }
 

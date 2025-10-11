@@ -3,7 +3,7 @@ import { CoreObject } from "./core";
 import { game } from "./game";
 import { Vector, Vectorlike } from "./vector";
 import { Clocky } from "./clocky";
-import { asset } from "./util";
+import { asset, toNearest } from "./util";
 import { IRepeller } from "./repeller";
 
 
@@ -93,9 +93,10 @@ export class Spirit extends CoreObject {
             this.destroy();
         }
 
-        let repellers = game.objects.getAll("repeller");
+        let repellers = Array.from(game.objects.getAll("repeller"));
+        let eReps = repellers.filter(r => r.emotional).sort((a, b) => b.position.distanceSquared(this) - a.position.distanceSquared(this));
         this.emotional = false;
-        for (const repeller of repellers) {
+        for (const repeller of eReps) {
             if (!repeller.emotional) continue;
             this.repellerCheck(repeller);
         }
@@ -114,7 +115,7 @@ export class Spirit extends CoreObject {
 
         for (const repeller of repellers) {
             if (repeller.emotional) continue;
-            this.repellerCheck(repeller);
+            if (this.repellerCheck(repeller)) break;
         }
 
         this.fadeAway.check();
@@ -127,6 +128,7 @@ export class Spirit extends CoreObject {
     }
 
     repellerCheck(repeller: IRepeller) {
+        let gotHit = false;
         if (repeller.check(this)) {
             let strength = -repeller.strength;
 
@@ -134,6 +136,7 @@ export class Spirit extends CoreObject {
                 this.fadeAway.stop = false;
             } else {
                 repeller.hit(this);
+                gotHit = true
             }
 
             if (repeller.emotional) this.emotional = true;
@@ -149,6 +152,8 @@ export class Spirit extends CoreObject {
             }
 
         }
+
+        return gotHit;
     }
 
     affect(strength: number, from: Vectorlike) {

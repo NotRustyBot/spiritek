@@ -75,7 +75,7 @@ export function interpolateColors(a: ColorSource, b: ColorSource, ratio: number)
     return out;
 }
 
-export function toNearest<T extends CoreObject>(position: Vectorlike) {
+export function toNearest<T extends {position: Vector}>(position: Vectorlike) {
     return (acc: T, curr: T) => {
         return acc.position.distanceSquared(position) < curr.position.distanceSquared(position) ? acc : curr;
     }
