@@ -15,8 +15,8 @@ export class WaveManager extends CoreObject {
     direction = new Vector();
     speed = 0.1;
 
-    size = 4000;
-    spawnClocky = new Clocky(0.9);
+    size = 6000;
+    spawnClocky = new Clocky(0.75);
 
     background: Sprite;
     light: Sprite;
@@ -30,12 +30,12 @@ export class WaveManager extends CoreObject {
         this.light.anchor.set(0.5);
         this.light.scale.set(this.size / 350);
         this.clocky = Clocky.sequence([
-            { time: 10 },
-            { time: 10, during: () => { this.angle += game.dts * 0.15 } },
-            { time: 10 },
-            { time: 10, during: () => { this.angle -= game.dts * 0.15 } },
-            { time: 10 },
-            { time: 100, during: () => { this.spawnClocky.limit = 1.1 - this.clocky.progress } },
+          //  { time: 10 },
+          //  { time: 10, during: () => { this.angle += game.dts * 0.15 } },
+          //  { time: 10 },
+          //  { time: 10, during: () => { this.angle -= game.dts * 0.15 } },
+          //  { time: 10 },
+            //{ time: 100, during: () => { this.spawnClocky.limit = 1.1 - this.clocky.progress } },
         ]);
     }
 
@@ -45,7 +45,7 @@ export class WaveManager extends CoreObject {
         this.direction.set(Vector.fromAngle(this.angle)).mult(this.speed);
         this.background.width = game.camera.width;
         this.background.height = game.camera.height;
-        this.background.tint = interpolateColors(0x202830, 0x101418, clamp(1 - this.spawnClocky.limit, 0, 1));
+        this.background.tint = interpolateColors(0x202830, 0x010408, clamp(1 - this.spawnClocky.limit, 0, 1));
 
     }
 }

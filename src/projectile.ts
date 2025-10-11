@@ -13,27 +13,19 @@ export class Projectile extends CoreObject {
 
     sprite: Sprite;
 
-    constructor(position: Vectorlike) {
+    constructor(position: Vectorlike, target: Spirit) {
         super("updatable");
         this.position.set(position);
         this.sprite = new Sprite(asset("projectile"));
         this.sprite.anchor.set(0.5);
         game.containers.projectile.addChild(this.sprite);
-        let dist = 5000;
         this.life = this.maxLife;
-        let nearest = undefined as unknown as Spirit;
-        for (const spirit of Array.from(game.objects.getAll("spirit"))) {
-            if (spirit.power <= 1) continue;
-            let cdist = spirit.position.distance(this);
-            if (cdist < dist) {
-                dist = cdist;
-                nearest = spirit;
-            }
-        }
+
+        let dist = this.position.distance(target);
 
 
-        if (nearest) {
-            this.velocity = nearest.position.clone().add(nearest.velocity.clone().mult(dist / 4)).diff(this).normalize(4);
+        if (target) {
+            this.velocity = target.position.clone().add(target.velocity.clone().mult(dist / 4)).diff(this).normalize(4);
         }
 
         this.sprite.rotation = this.velocity.toAngle();
@@ -43,7 +35,7 @@ export class Projectile extends CoreObject {
     }
 
     update() {
-        this.position.add(this.velocity.clone().mult(game.dt));
+        this.position.add(this.velocity.clone().mult(game.dtms));
         const spirits = game.objects.getAll("spirit");
         this.sprite.position.set(this.x, this.y);
 
@@ -55,7 +47,7 @@ export class Projectile extends CoreObject {
             }
         }
 
-        this.life -= game.dts;
+        this.life -= game.dt;
         if (this.life <= 0) {
             this.destroy();
         }

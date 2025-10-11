@@ -1,0 +1,1 @@
+{"style":"empty: rectFill(0xffaa00, 100, 100)\nasteroid[kind=stone_1]: sprite(\"http://localhost:5173/img/stone_1.png\")\nasteroid[kind=stone_2]: sprite(\"http://localhost:5173/img/stone_2.png\")\n[rotation]: rotate($rotation)\n\n"}

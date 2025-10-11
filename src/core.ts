@@ -24,8 +24,6 @@ export class CoreObject {
 
 
     constructor(...tags: ObjectKind[]) {
-        //if (tags == undefined) return this;
-
         for (const tag of tags) {
             game.objects.add(tag, this as any);
             this.tags.add(tag);

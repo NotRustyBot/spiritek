@@ -7,6 +7,7 @@ import { game } from "./game";
 import { Spirit } from "./spirit";
 import { ISelectable } from "./types";
 import { OutlineFilter } from "pixi-filters";
+import { ISelectableBase } from "./select";
 
 export class FlareCore extends CoreObject implements ISelectable {
     sprite: Sprite;
@@ -49,11 +50,11 @@ export class FlareCore extends CoreObject implements ISelectable {
     size = 50;
 
     hover() {
-        this.sprite.filters = [new OutlineFilter({ color: 0xffffff, thickness: 2 })];
+        ISelectableBase.hover(this, this.sprite);
     }
 
     unhover() {
-        this.sprite.filters = [];
+        ISelectableBase.unhover(this, this.sprite);
     }
 
     hit(power: Spirit) { }
@@ -66,7 +67,7 @@ export class FlareCore extends CoreObject implements ISelectable {
 
 
         if (this.strength < 1) {
-            this.strength = Math.min(1, this.strength + game.dts);
+            this.strength = Math.min(1, this.strength + game.dt);
         }
     }
 
@@ -83,7 +84,7 @@ export class FlareCore extends CoreObject implements ISelectable {
 
 export class RepellFlare extends FlareCore {
     color = 0xffff00;
-    range = 300;
+    range = 500;
 
     override hit(spirit: Spirit) {
         this.strength -= 0.05;
@@ -94,7 +95,7 @@ export class RepellFlare extends FlareCore {
 
 export class KillFlare extends FlareCore {
     color = 0xff0000;
-    range = 200;
+    range = 300;
 
     override hit(spirit: Spirit) {
         this.strength -= 0.1;

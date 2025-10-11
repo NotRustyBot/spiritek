@@ -4,6 +4,7 @@ import { Vector, Vectorlike } from "./vector";
 import pointInPolygon from "point-in-polygon"
 import { game } from "./game";
 import { Spirit } from "./spirit";
+import { interpolateColors } from "./util";
 
 
 declare module "./types" { interface ObjectKinds { repeller: IRepeller } }
@@ -34,7 +35,7 @@ export class RangeRepeller extends CoreObject implements IRepeller {
 
     debug(graphics: Graphics) {
         graphics.circle(this.x, this.y, this.range);
-        graphics.stroke({ color: 0xffaa00, width: 1 / game.containers.world.scale.x, alpha: this.strength });
+        graphics.stroke({ color: debugColor(this), width: 1 / game.containers.world.scale.x});
     }
 }
 
@@ -76,6 +77,10 @@ export class PolygonRepeller extends CoreObject implements IRepeller {
         graphics.closePath();
 
 
-        graphics.stroke({ color: 0xffaa00, width: 1 / game.containers.world.scale.x, alpha: this.strength });
+        graphics.stroke({ color: debugColor(this), width: 1 / game.containers.world.scale.x });
     }
+}
+
+function debugColor(rep: IRepeller) {
+    return interpolateColors(0xff0000, rep.emotional ? 0xaa00aa : 0xffaa00, Math.abs(rep.strength));
 }

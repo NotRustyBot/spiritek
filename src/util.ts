@@ -2,6 +2,7 @@ import { Assets, Color, ColorSource, Graphics } from "pixi.js";
 import { type BundleAliases } from "./bundle.ts";
 import { Vector, type Vectorlike } from "./vector.ts";
 import bundle_sound, { type Bundle_soundAliases, type Bundle_soundAsset } from './bundle_sound.ts';
+import { CoreObject } from "./core.ts";
 
 
 export function asset(name: BundleAliases): any;
@@ -49,10 +50,16 @@ export function angleInterpolate(current: number, target: number, step: number) 
 
     if (target < current) target += Math.PI * 2;
 
-    if (target - current <= step) return target;
+    if (target - current <= step * 2) return target;
 
     if (target - current > Math.PI) return current - step;
     return current + step;
+}
+
+export function angleDistance(current: number, target: number) {
+    current = fixAngle(current);
+    target = fixAngle(target);
+    return target - current;
 }
 
 function fixAngle(angle: number) {
@@ -66,6 +73,12 @@ export function interpolateColors(a: ColorSource, b: ColorSource, ratio: number)
     b = new Color(b);
     const out = new Color([a.red + (b.red - a.red) * ratio, a.green + (b.green - a.green) * ratio, a.blue + (b.blue - a.blue) * ratio]);
     return out;
+}
+
+export function toNearest<T extends CoreObject>(position: Vectorlike) {
+    return (acc: T, curr: T) => {
+        return acc.position.distanceSquared(position) < curr.position.distanceSquared(position) ? acc : curr;
+    }
 }
 
 /*

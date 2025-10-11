@@ -81,24 +81,26 @@ export class Spirit extends CoreObject {
 
     topSpeed = 0.5;
 
+    emotional = false;
 
     update() {
 
         this.velocity.x += Math.random() * 0.2 - 0.1;
         this.velocity.y += Math.random() * 0.2 - 0.1;
 
-        this.velocity.add(this.direction);
 
         if (this.position.lengthSquared() > this.waveManager.size ** 2) {
             this.destroy();
         }
 
         let repellers = game.objects.getAll("repeller");
-
+        this.emotional = false;
         for (const repeller of repellers) {
             if (!repeller.emotional) continue;
             this.repellerCheck(repeller);
         }
+
+        if (!this.emotional) this.velocity.add(this.direction);
 
         let speed = this.velocity.length();
 
@@ -118,7 +120,7 @@ export class Spirit extends CoreObject {
         this.fadeAway.check();
 
 
-        this.position.add(this.velocity.clone().mult(game.dt));
+        this.position.add(this.velocity.clone().mult(game.dtms));
 
         this.nodes.unshift(this.position.clone());
         this.nodes.pop();
@@ -134,13 +136,12 @@ export class Spirit extends CoreObject {
                 repeller.hit(this);
             }
 
+            if (repeller.emotional) this.emotional = true;
+
             if (strength != 0 && !repeller.noStrength) {
                 if (repeller.emotional) {
-                    let speed = this.velocity.length();
-                    const repell = repeller.position.diff(this).normalize(strength);
+                    const repell = repeller.position.diff(this).normalize(this.waveManager.speed * strength);
                     this.velocity.add(repell);
-                    this.velocity.normalize(speed);
-
                 } else {
                     strength /= (Math.max(this.power, 1));
                     this.affect(strength, repeller.position)

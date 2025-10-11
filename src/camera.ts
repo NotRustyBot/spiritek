@@ -26,10 +26,10 @@ export class Camera extends CoreObject {
     }
 
     constructor() {
-        super("drawable", "Camera");
+        super( "Camera");
     }
 
-    draw() {
+    update() {
         let dist = game.controls.mousePosition.clone().distance(this.center);
 
         if (dist > this.height / 3) {
@@ -43,6 +43,8 @@ export class Camera extends CoreObject {
             let zoom = this.zoom * 1 + (-Math.sign(game.controls.wheel) / 10) * Math.abs(this.zoom);
             game.containers.world.scale.set(zoom);
         }
+
+        this.position.clampAxis(game.objects.getFirst("WaveManager").size);
 
         game.containers.world.x = (-this.x * this.zoom + window.innerWidth / 2);
         game.containers.world.y = (-this.y * this.zoom + window.innerHeight / 2);

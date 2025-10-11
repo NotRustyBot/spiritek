@@ -1,5 +1,12 @@
 import { game } from "./game";
+import { Action } from "./types";
 import { Vector } from "./vector";
+
+export enum MousePriority {
+    order = 0,
+    select = 1,
+    ui = 2,
+}
 
 export class ControlManager {
     pressed: Record<string, boolean> = {};
@@ -7,7 +14,7 @@ export class ControlManager {
     released: Record<string, boolean> = {};
     mousePosition = new Vector();
     pointerDown = false;
-    click = false;
+    clicked = false;
     rightDown = false;
     wheel = 0;
     get worldMouse() {
@@ -17,7 +24,7 @@ export class ControlManager {
     constructor() {
         document.addEventListener("keydown", (k) => {
             console.log(k.code);
-            
+
             this.pressed[k.code] = true;
             this.held[k.code] = true;
         });
@@ -26,8 +33,6 @@ export class ControlManager {
             this.released[k.code] = true;
             delete this.held[k.code];
         });
-
-        game.objects.add("postprocess", this);
 
         document.addEventListener("mousemove", (e) => {
             this.mousePosition.set(e);
@@ -46,7 +51,7 @@ export class ControlManager {
         document.addEventListener("mousedown", (e) => {
             this.pointerDown = mouseButtonPressed(e, "left");
             this.rightDown = mouseButtonPressed(e, "right");
-            this.click = true;
+            this.clicked = true;
         });
 
         document.addEventListener("wheel", (e) => {
@@ -54,11 +59,47 @@ export class ControlManager {
         })
     }
 
-    postprocess() {
+    requestMouse(priority: MousePriority, action: () => boolean | void) {
+        this.clickRequests.push({ action, priority });
+    }
+
+    requestClick(priority: MousePriority, action: () => boolean | void) {
+        this.requestMouse(priority, () => {
+            if (!this.clicked) return false;
+            action();
+            game.controls.clicked = false;
+            game.controls.pointerDown = false;
+        })
+    }
+
+    requestPointerDown(priority: MousePriority, action: () => boolean | void) {
+        this.requestMouse(priority, () => {
+            if (!this.pointerDown) return false;
+            action();
+        })
+    }
+
+
+
+    clickRequests = new Array<{ action: () => boolean | void, priority: MousePriority }>;
+
+    update() {
         this.pressed = {};
         this.released = {};
         this.wheel = 0;
-        this.click = false;
+
+        if (this.clickRequests.length > 0) {
+            const rq = this.clickRequests.sort((a, b) => (b.priority - a.priority));
+            while (rq.length > 0) {
+                const result = rq.shift()!.action();
+                if (result !== false) break;
+            }
+        }
+
+        this.clickRequests = [];
+
+
+        this.clicked = false;
     }
 }
 

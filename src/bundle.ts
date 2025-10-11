@@ -5,6 +5,10 @@ const bundle = {
   name: "bundle",
   assets: [
     {
+      alias: "astronaut",
+      src: "./img/astronaut.png"
+    },
+    {
       alias: "blurcircle",
       src: "./img/blurcircle.png"
     },
@@ -21,6 +25,10 @@ const bundle = {
       src: "./img/floodlight.png"
     },
     {
+      alias: "girder",
+      src: "./img/girder.png"
+    },
+    {
       alias: "light",
       src: "./img/light.png"
     },
@@ -31,6 +39,10 @@ const bundle = {
     {
       alias: "projectile",
       src: "./img/projectile.png"
+    },
+    {
+      alias: "ritual",
+      src: "./img/ritual.png"
     },
     {
       alias: "ship",
@@ -55,6 +67,10 @@ const bundle = {
     {
       alias: "stone_2",
       src: "./img/stone_2.png"
+    },
+    {
+      alias: "turret",
+      src: "./img/turret.png"
     }
   ]
 } as const;

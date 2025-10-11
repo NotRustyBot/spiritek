@@ -1,118 +1,50 @@
-import { Sprite } from "pixi.js";
-import { PolygonRepeller, RangeRepeller } from "./repeller";
 import { CoreObject } from "./core";
+import { RangeRepeller } from "./repeller";
+import { Ship } from "./ship";
+import { Spotlight } from "./spotlight";
+import { Turret } from "./turret";
 import { Vector, Vectorlike } from "./vector";
-import { angleInterpolate, asset, rotate } from "./util";
-import { game } from "./game";
-import { Spirit } from "./spirit";
-import { Clocky } from "./clocky";
-import { ISelectable } from "./types";
-import { OutlineFilter } from "pixi-filters";
 
-export class ShipModule {
-    slot: number;
-    constructor(slot: number) {
-        this.slot = slot;
+export class ShipModule extends CoreObject {
+    private relativePosition = new Vector();
+
+    setRelativePosition(x: number | Vectorlike, y?: number) {
+        this.relativePosition.set(x as any, y as any);
+        this.angle = this.relativePosition.toAngle();
+        this.distance = this.relativePosition.length();
+    }
+
+
+    private distance!: number;
+    private angle!: number;
+    ship: Ship;
+    constructor(relativePosition: Vectorlike, ship: Ship) {
+        super();
+        this.ship = ship
+        this.setRelativePosition(relativePosition);
+    }
+
+
+
+    update() {
+        this.position.set(0, 0);
+        this.position.add(this.ship);
+        this.position.add(Vector.fromAngle(this.ship.rotation + this.angle).mult(this.distance));
     }
 }
 
-export class Spotlight extends CoreObject implements ISelectable {
-    repeller: PolygonRepeller;
-    light: Sprite;
-    sprite: Sprite;
-
-    size = 100; // selectable
-
-
-    polygon: Array<Vectorlike>;
-
-    aimAngle = 0;
-
-    targetPosition = new Vector();
-
-    constructor() {
-        super("updatable", "drawable", "selectable");
-        this.light = new Sprite(asset("floodlight"));
-        this.light.anchor.set(0, 0.5);
-        game.containers.light.addChild(this.light);
-        this.sprite = new Sprite(asset("spotlight"));
-        this.sprite.anchor.set( 0.5);
-        game.containers.items.addChild(this.sprite);
-        this.repeller = new PolygonRepeller();
-        this.polygon = [
-            {
-                "x": 0,
-                "y": 0
-            },
-            {
-                "x": 0.8,
-                "y": 0.4,
-            },
-            {
-                "x": 1,
-                "y": 0,
-            },
-            {
-                "x": 0.8,
-                "y": -0.4,
-            }
-        ]
-        const scale = 2000;
-        this.polygon = this.polygon.map(n => ({ x: n.x * scale, y: n.y * scale }));
-        this.repeller.setPolygon(this.polygon);
-        this.light.scale.set(scale / 127);
-
-        this.repeller.noStrength = true;
-
-        this.repeller.hit = (s: Spirit) => {
-            let proximity = 1 - (s.position.distance(this) / scale) / s.power;
-            let power = (proximity) * this.repeller.strength * 0.3;
-
-            if (this.repeller.strength > 0.03) {
-                this.repeller.strength -= s.power * 0.1 * game.dts * (1 - proximity) * this.repeller.strength;
-            }
-
-            s.affect(-power * game.dts * 60, this);
-        }
+export class ShipFloodlight extends ShipModule {
+    spotlight = new Spotlight();
+    override update() {
+        super.update();
+        this.spotlight.position.set(this);
     }
+}
 
-    select?(): void {
-        game.ship.setAction()
-    }
-    unselect?(): void {
-        throw new Error("Method not implemented.");
-    }
-
-    hover() {
-        this.sprite.filters = [new OutlineFilter({ color: 0xffffff, thickness: 2 })];
-    }
-
-    unhover() {
-        this.sprite.filters = [];
-    }
-
-    update() {
-        const targetAngle = this.targetPosition.diff(this.position).toAngle();
-
-        if (this.aimAngle != targetAngle) {
-            this.aimAngle = angleInterpolate(this.aimAngle, targetAngle, game.dts)
-            this.repeller.setPolygon(rotate(this.polygon, this.aimAngle));
-        }
-
-        this.repeller.strength += game.dts;
-        if (this.repeller.strength > 1) this.repeller.strength = 1;
-
-        this.repeller.position.set(this);
-
-    }
-
-    blinker = new Clocky(0.05);
-
-    draw() {
-        this.light.position.set(this.repeller.x, this.repeller.y);
-        this.sprite.position.set(this.repeller.x, this.repeller.y);
-        if (this.blinker.check()) this.light.alpha = 0.2 * (1 + (1 - this.repeller.strength) * Math.random());
-        this.light.rotation = this.aimAngle;
-        this.sprite.rotation = this.aimAngle;
+export class ShipTurret extends ShipModule {
+    turret = new Turret();
+    override update() {
+        super.update();
+        this.turret.position.set(this);
     }
 }

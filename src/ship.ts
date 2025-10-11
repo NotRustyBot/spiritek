@@ -1,23 +1,32 @@
 import { CoreObject } from "./core";
 import { game } from "./game";
 import { AttractFlare, KillFlare, RepellFlare } from "./flare";
-import { ShipModule, Spotlight } from "./shipModule";
+import { ShipFloodlight, ShipModule, ShipTurret } from "./shipModule";
+import { Spotlight } from "./spotlight";
 import { Sprite } from "pixi.js";
-import { asset, rotate } from "./util";
+import { angleDistance, angleInterpolate, asset, rotate, toNearest } from "./util";
 import { PolygonRepeller, RangeRepeller } from "./repeller";
 import shipHitbox from "./hitbox/ship.json";
 import { Spirit } from "./spirit";
 import { Clocky } from "./clocky";
 import { Projectile } from "./projectile";
+import { Vector } from "./vector";
+import { Turret } from "./turret";
+import { SpotlightInstallation, TurretInstallation } from "./installation";
+import { MousePriority } from "./input";
+import { ISelectable } from "./types";
+import { ISelectableBase } from "./select";
+import { TestRitual } from "./ritual";
 
-export class Ship extends CoreObject {
+export class Ship extends CoreObject implements ISelectable {
     action = new SpawnRepellFlare(this);
     repeller: PolygonRepeller;
     attractor: RangeRepeller;
     sprite: Sprite;
 
-    spotlight = new Spotlight();
-    spotlight2 = new Spotlight();
+    spotlightL: ShipFloodlight;
+    spotlightR: ShipFloodlight;
+    turret: ShipTurret;
 
     private _rotation = 0;
     get rotation() {
@@ -31,44 +40,49 @@ export class Ship extends CoreObject {
         }
     }
 
+    targetRotation = -1;
+    targetPosition = new Vector();
+
     constructor() {
-        super("updatable");
+        super("updatable", "selectable");
         this.sprite = new Sprite(asset("ship"));
         game.containers.ship.addChild(this.sprite);
         this.sprite.anchor.set(0.5);
         this.attractor = new RangeRepeller();
-        this.attractor.range = 2000;
+        this.attractor.range = 1800;
         this.attractor.emotional = true;
-        this.attractor.strength = -0.1;
-        this.attractor.hit = (spirit: Spirit) => {
-            spirit.velocity.sub(spirit.direction.clone().mult(0.9));
-        }
+        this.attractor.strength = -1;
 
         this.repeller = new PolygonRepeller();
         this.repeller.setPolygon(shipHitbox);
 
-        this.spotlight.y = 400;
+        this.spotlightL = new ShipFloodlight({ x: -50, y: 100 }, this);
+        this.spotlightR = new ShipFloodlight({ x: -50, y: -100 }, this);
 
-
-        this.spotlight2.x = 1000;
-        this.spotlight2.y = -500;
-
+        this.turret = new ShipTurret({ x: 300, y: 0 }, this);
+        this.turret.turret.range = 1000;
 
         this.x = 1000;
         this.y = 500;
         this.rotation = -1;
     }
 
+    size = 500;
+
 
     actions = [
         SpawnRepellFlare,
         SpawnKillFlare,
-        SpawnAttractFlare,
-        MoveSpotlight,
-        MoveSpotlight2,
+        PlaceTurret,
+        PlaceSpotlight,
+        RotateTo,
+        MoveTo,
+        SpawnRitual
     ]
 
     setAction(index = 0) {
+        game.selected?.unselect?.();
+        game.selected = this;
         this.action.destroy();
         this.action = new this.actions[index](this);
     }
@@ -86,19 +100,39 @@ export class Ship extends CoreObject {
             this.setAction(3);
         } else if (game.controls.pressed["Digit5"]) {
             this.setAction(4);
+        } else if (game.controls.pressed["Digit6"]) {
+            this.setAction(5);
+        } else if (game.controls.pressed["Digit7"]) {
+            this.setAction(6);
         }
 
-
-        if (this.clocky.check()) {
-            const p = new Projectile(this);
-        }
-
-        this.action.update();
+        if (game.selected == this) this.action.update();
 
         this.repeller.position.set(this);
         this.attractor.position.set(this);
         this.sprite.position.set(this.x, this.y);
         this.sprite.rotation = this.rotation;
+
+        const rotSpeed = 0.3;
+        if (this.rotation != this.targetRotation) {
+            this.rotation = angleInterpolate(this.rotation, this.targetRotation, game.dt * rotSpeed);
+        }
+
+        const dsq = this.position.distanceSquared(this.targetPosition);
+        if (dsq > 1) {
+            const diff = this.targetPosition.diff(this);
+            const align = Math.abs(angleDistance(diff.toAngle(), this.rotation)) < 1 ? 1 : 0.3;
+            const speed = 100 * game.dt * align;
+            if (dsq < speed) {
+                this.position.set(this.targetPosition);
+            } else {
+                this.position.add(diff.normalize(speed));
+            }
+        }
+
+        this.spotlightL.update();
+        this.spotlightR.update();
+        this.turret.update();
     }
 }
 
@@ -109,9 +143,7 @@ class ShipAction {
         this.ship = ship;
         this.module = module;
     }
-    get click() {
-        return game.controls.click && game.controls.pointerDown;
-    }
+
     update() { }
 
     destroy() { }
@@ -119,52 +151,71 @@ class ShipAction {
 
 class SpawnRepellFlare extends ShipAction {
     override update() {
-        if (this.click) {
-            game.controls.click = false;
+        game.controls.requestClick(MousePriority.order, () => {
             const flare = new RepellFlare();
-
-            flare.position = game.camera.position.clone();
             flare.position = game.controls.worldMouse.clone();
-        }
+        });
     }
 }
 
 class SpawnKillFlare extends ShipAction {
     override update() {
-        if (this.click) {
-            game.controls.click = false;
+        game.controls.requestClick(MousePriority.order, () => {
             const flare = new KillFlare();
-
-            flare.position = game.camera.position.clone();
             flare.position = game.controls.worldMouse.clone();
-        }
+        });
+    }
+}
+
+class PlaceTurret extends ShipAction {
+    override update() {
+        game.controls.requestClick(MousePriority.order, () => {
+            const ast = Array.from(game.objects.getAll("asteroid")).reduce(toNearest(game.controls.worldMouse));
+            const turret = new TurretInstallation(game.controls.worldMouse, ast);
+        });
+    }
+}
+
+class PlaceSpotlight extends ShipAction {
+    override update() {
+        game.controls.requestClick(MousePriority.order, () => {
+            const ast = Array.from(game.objects.getAll("asteroid")).reduce(toNearest(game.controls.worldMouse));
+            const turret = new SpotlightInstallation(game.controls.worldMouse, ast);
+        });
     }
 }
 
 class SpawnAttractFlare extends ShipAction {
     override update() {
-        if (this.click) {
-            game.controls.click = false;
+        game.controls.requestClick(MousePriority.order, () => {
             const flare = new AttractFlare();
-
-            flare.position = game.camera.position.clone();
             flare.position = game.controls.worldMouse.clone();
-        }
+        });
     }
 }
 
-class MoveSpotlight extends ShipAction {
+class SpawnRitual extends ShipAction {
     override update() {
-        if (game.controls.pointerDown) {
-            this.ship.spotlight.targetPosition.set(game.controls.worldMouse.clone());
-        }
+        game.controls.requestClick(MousePriority.order, () => {
+            const ritual = new TestRitual();
+            ritual.position = game.controls.worldMouse.clone();
+        });
     }
 }
 
-class MoveSpotlight2 extends ShipAction {
+class RotateTo extends ShipAction {
     override update() {
-        if (game.controls.pointerDown) {
-            this.ship.spotlight2.targetPosition.set(game.controls.worldMouse.clone());
-        }
+        game.controls.requestPointerDown(MousePriority.order, () => {
+            this.ship.targetRotation = game.controls.worldMouse.diff(this.ship).toAngle();
+        });
     }
 }
+
+class MoveTo extends ShipAction {
+    override update() {
+        game.controls.requestPointerDown(MousePriority.order, () => {
+            this.ship.targetPosition.set(game.controls.worldMouse);
+        });
+    }
+}
+
