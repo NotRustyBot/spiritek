@@ -1,4 +1,3 @@
-import { OutlineFilter } from "pixi-filters";
 import { Sprite } from "pixi.js";
 import { Clocky } from "./clocky";
 import { CoreObject } from "./core";
@@ -9,15 +8,16 @@ import { ISelectable } from "./types";
 import { asset, angleInterpolate, rotate } from "./util";
 import { Vectorlike, Vector } from "./vector";
 import { ISelectableBase } from "./select";
-import { FlareCore } from "./flare";
 import { MousePriority } from "./input";
 import { SpotlightTarget } from "./orderManager";
 import { ObjectOptionsData } from "./ui/objectOptions";
+import { Light } from "./lighting/light";
+import { CustomColor } from "./lighting/color";
 
 
 export class Spotlight extends CoreObject implements ISelectable {
     repeller: PolygonRepeller;
-    light: Sprite;
+    lightSprite: Sprite;
     sprite: Sprite;
 
     size = 100; // selectable
@@ -34,12 +34,13 @@ export class Spotlight extends CoreObject implements ISelectable {
             name: "Spotlight",
         }
     }
+    light: Light;
 
     constructor() {
         super("updatable", "drawable", "selectable");
-        this.light = new Sprite(asset("floodlight"));
-        this.light.anchor.set(0, 0.5);
-        game.containers.light.addChild(this.light);
+        this.lightSprite = new Sprite(asset("floodlight"));
+        this.lightSprite.anchor.set(0, 0.5);
+        game.containers.light.addChild(this.lightSprite);
         this.sprite = new Sprite(asset("spotlight"));
         this.sprite.anchor.set(0.5);
         game.containers.items.addChild(this.sprite);
@@ -65,7 +66,7 @@ export class Spotlight extends CoreObject implements ISelectable {
         const scale = 2000;
         this.polygon = this.polygon.map(n => ({ x: n.x * scale, y: n.y * scale }));
         this.repeller.setPolygon(this.polygon);
-        this.light.scale.set(scale / 127);
+        this.lightSprite.scale.set(scale / 127);
 
         this.repeller.noStrength = true;
 
@@ -79,6 +80,7 @@ export class Spotlight extends CoreObject implements ISelectable {
 
             s.affect(-power * game.dt * 60, this);
         };
+        this.light = new Light({ position: this.position, intensity: 0.7,color:new CustomColor(255,10,5) });
     }
 
     select(): void {
@@ -111,15 +113,30 @@ export class Spotlight extends CoreObject implements ISelectable {
 
         this.repeller.position.set(this);
 
+        this.light.position.set(this);
+        this.light.angle = this.aimAngle;
+
+
+        if (game.selected == this) {
+            game.controls.requestPointerDown(MousePriority.order, () => {
+                this.targetPosition.set(game.controls.worldMouse.clone());
+            })
+        }
+
     }
 
     blinker = new Clocky(0.05);
 
     draw() {
-        this.light.position.set(this.repeller.x, this.repeller.y);
+        this.lightSprite.position.set(this.repeller.x, this.repeller.y);
         this.sprite.position.set(this.repeller.x, this.repeller.y);
-        if (this.blinker.check()) this.light.alpha = 0.2 * (1 + (1 - this.repeller.strength) * Math.random()) * this.repeller.strength;
-        this.light.rotation = this.aimAngle;
+        if (this.blinker.check()) {
+            this.lightSprite.alpha = 0.2 * (1 + (1 - this.repeller.strength) * Math.random()) * this.repeller.strength;
+            this.light.intensity = this.lightSprite.alpha*3;
+            this.lightSprite.alpha = 0;
+
+        }
+        this.lightSprite.rotation = this.aimAngle;
         this.sprite.rotation = this.aimAngle;
     }
 }

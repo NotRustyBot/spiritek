@@ -1,5 +1,6 @@
 import { CoreObject } from "./core";
 import { game } from "./game";
+import { Vector } from "./vector";
 
 
 declare module "./types" { interface ObjectKinds { Camera: Camera } }
@@ -48,5 +49,9 @@ export class Camera extends CoreObject {
 
         game.containers.world.x = (-this.x * this.zoom + window.innerWidth / 2);
         game.containers.world.y = (-this.y * this.zoom + window.innerHeight / 2);
+    }
+
+    worldToRender(position:Vector){
+        return position.clone().sub(this.position).mult(this.zoom).vecdiv(new Vector(window.innerWidth, window.innerHeight)).add(new Vector(0.5,0.5));
     }
 }
