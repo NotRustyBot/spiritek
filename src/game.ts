@@ -1,4 +1,4 @@
-import { BlurFilter, Container, Graphics, type Application } from "pixi.js";
+import { BlurFilter, Container, Graphics, RenderTexture, Sprite, type Application } from "pixi.js";
 import { ObjectManager } from "./objectManager";
 import { Spirit } from "./spirit";
 import { PolygonRepeller, RangeRepeller } from "./repeller";
@@ -18,6 +18,9 @@ import { Astronaut } from "./astronaut";
 import { TestRitual } from "./ritual";
 import { ObjectOptions } from "./ui/objectOptions";
 import { UI } from "./ui/UI";
+import { Lightmap } from "./lighting/lightmap";
+import { Shadowmap } from "./lighting/shadowmap";
+import { Light } from "./lighting/light";
 
 export let game: Game;
 
@@ -58,23 +61,34 @@ export class Game {
 
     objects = new ObjectManager();
     controls: ControlManager;
-    ship: Ship;
+    ship!: Ship;
     camera: Camera;
     selected: ISelectable | undefined = undefined;
     hovered: ISelectable | undefined = undefined;
+
+    shadowCasterTexture: RenderTexture;
 
 
     constructor(app: Application) {
         game = this;
         this.controls = new ControlManager();
-        this.ship = new Ship();
+
         this.camera = new Camera();
         this.app = app;
 
         this.app.ticker.add(this.update.bind(this))
+        this.shadowCasterTexture = RenderTexture.create({ width: window.innerWidth, height: window.innerHeight });
+        window.addEventListener("resize", () => {
+            Lightmap.resize();
+            Shadowmap.resize();
+            this.shadowCasterTexture.resize(window.innerWidth, window.innerHeight);
+        });
     }
 
     init() {
+        console.log("init real");
+        Lightmap.init();
+        this.ship = new Ship();
         this.app.stage.addChild(this.containers.backdrop);
         this.app.stage.addChild(this.containers.world);
         this.containers.world.addChild(this.containers.darkness);
@@ -93,6 +107,7 @@ export class Game {
 
         this.containers.light.filters = [new BlurFilter({})]
 
+
         new WaveManager();
 
         for (const obj of scene) {
@@ -109,6 +124,11 @@ export class Game {
 
         document.body.appendChild(UI());
 
+        //TODO this is only temp
+        let sprite = new Sprite(Lightmap.texture);
+        this.app.stage.addChild(sprite);
+        sprite.filters = [new BlurFilter({})];
+
     }
 
 
@@ -122,6 +142,13 @@ export class Game {
 
         for (const obj of [...this.objects.getAll("preupdate")]) {
             obj.preupdate();
+        }
+
+        if (this.controls.pressed["KeyR"]) {
+            console.log(Light.list);
+            let sprite = new Sprite(Lightmap.texture);
+            this.app.stage.addChild(sprite);
+            sprite.filters = [new BlurFilter({})];
         }
 
         this.controls.requestMouse(MousePriority.select, () => {
@@ -158,6 +185,7 @@ export class Game {
             return false;
         });
 
+
         for (const obj of [...this.objects.getAll("updatable")]) {
             obj.update();
         }
@@ -170,9 +198,17 @@ export class Game {
             obj.draw();
         }
 
+        Shadowmap.clearOccluderTexture();
+        for (const obj of [...this.objects.getAll("shadowCaster")]) {
+            obj.drawShadow(game.app.renderer, Shadowmap.occluderTexture);
+        }
+        Shadowmap.update();
+        Lightmap.update();
+
         for (const obj of [...this.objects.getAll("postprocess")]) {
             obj.postprocess();
         }
+
 
         for (const obj of [...this.objects.getAll("debug")]) {
             //obj.debug(this.debugGraphics);

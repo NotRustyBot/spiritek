@@ -3,7 +3,7 @@ import { PolygonRepeller } from "./repeller"
 
 import stone1 from "./hitbox/stone1.json"
 import stone2 from "./hitbox/stone2.json"
-import { Sprite } from "pixi.js";
+import { Renderer, RenderTexture, Sprite } from "pixi.js";
 import { asset, rotate } from "./util";
 import { game } from "./game";
 
@@ -18,7 +18,7 @@ export class Asteroid extends CoreObject {
     sprite: Sprite;
 
     constructor(stone: keyof typeof hitboxLookup, rotation = 0, x = 0, y = 0) {
-        super("asteroid");
+        super("asteroid", "shadowCaster");
 
         this.sprite = new Sprite(asset(stone));
         this.sprite.anchor.set(0.5);
@@ -39,5 +39,16 @@ export class Asteroid extends CoreObject {
         this.sprite.position.set(x, y);
         this.repeller.x = x;
         this.repeller.y = y;
+    }
+
+    drawShadow(renderer: Renderer, texture: RenderTexture) {
+        this.sprite.tint = 0x000000;
+        renderer.render({
+            target: texture,
+            container: this.sprite,
+            clear: false,
+            transform: this.sprite.worldTransform
+        });
+        this.sprite.tint = 0xffffff;
     }
 }
