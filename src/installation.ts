@@ -8,6 +8,7 @@ import { Turret } from "./turret";
 import { RangeRepeller } from "./repeller";
 import { Spirit } from "./spirit";
 import { Spotlight } from "./spotlight";
+import { Drill } from "./drill";
 
 export class Installation extends CoreObject {
     parentAsteroid?: Asteroid;
@@ -23,7 +24,7 @@ export class Installation extends CoreObject {
 
         if (asteroid) {
             const dist = asteroid.position.distance(position);
-            const texture = asset("girder")
+            const texture = asset("girder");
             this.girder = new TilingSprite({
                 texture: texture,
                 width: texture.width,
@@ -83,4 +84,25 @@ export class SpotlightInstallation extends Installation {
         this.underAttack = false;
         this.spotlight.position.set(this);
     }
+}
+
+export class DrillInstallation extends Installation {
+    drill: Drill;
+    constructor(position: Vectorlike, asteroid: Asteroid) {
+        super(position, asteroid);
+        this.attractor.enabled = false;
+        this.drill = new Drill(asteroid, this);
+        this.attractor.hit = () => { };
+
+        if (asteroid) {
+            const texture = asset("drillbit");
+            this.girder!.texture = texture;
+            this.girder!.width = texture.width;
+        }
+
+        this.drill.position.set(position);
+        this.drill.rotate();
+
+    }
+
 }

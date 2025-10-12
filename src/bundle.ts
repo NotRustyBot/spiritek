@@ -17,6 +17,14 @@ const bundle = {
       src: "./img/circle.png"
     },
     {
+      alias: "drill",
+      src: "./img/drill.png"
+    },
+    {
+      alias: "drillbit",
+      src: "./img/drillbit.png"
+    },
+    {
       alias: "flare",
       src: "./img/flare.png"
     },

@@ -94,7 +94,7 @@ export class Spirit extends CoreObject {
         }
 
         let repellers = Array.from(game.objects.getAll("repeller"));
-        let eReps = repellers.filter(r => r.emotional).sort((a, b) => b.position.distanceSquared(this) - a.position.distanceSquared(this));
+        let eReps = repellers.filter(r => r.emotional).sort((a, b) => a.position.distanceSquared(this) - b.position.distanceSquared(this));
         this.emotional = false;
         for (const repeller of eReps) {
             if (!repeller.emotional) continue;

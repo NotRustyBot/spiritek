@@ -6,11 +6,14 @@ import { game } from "./game";
 import { MousePriority } from "./input";
 import { asset, toNearest } from "./util";
 import { ItemType } from "./items";
-import { Installation, SpotlightInstallation } from "./installation";
+import { DrillInstallation, Installation, SpotlightInstallation } from "./installation";
 import { Spotlight } from "./spotlight";
+import { Drill } from "./drill";
+import { Asteroid } from "./asteroid";
+import { Vector } from "./vector";
 
 export class OrderManager extends CoreObject {
-
+    orders = new Set<Order>();
     currentOrder?: Order;
     constructor() {
         super("updatable");
@@ -20,37 +23,76 @@ export class OrderManager extends CoreObject {
         this.currentOrder?.destroy();
         this.currentOrder = order;
         game.uiManager.updateObjectOptions(game.selected?.uiData);
+        this.orders.add(order);
     }
 
     update() {
-        this.currentOrder?.update();
+        this.currentOrder?.plan();
+        for (const order of this.orders) {
+            order.show();
+        }
     }
 
+
     cancel() {
-        this.currentOrder?.destroy();
+        this.currentOrder?.cancel();
     }
 }
 
-class Order {
-    update() { }
+export class Order {
+    storedTarget?: Vector;
+    get orderTarget() {
+        return this.storedTarget ?? game.controls.worldMouse;
+    }
+
+    plan() { }
+    show() { }
+
+    execute() { }
+
+    cancel() {
+        this.destroy();
+    }
 
     destroy() {
         if (game.orderManager.currentOrder == this) game.orderManager.currentOrder = undefined;
         game.uiManager.updateObjectOptions(game.selected?.uiData);
-
+        game.orderManager.orders.delete(this);
     }
 }
 
 
-
-export class AstronautThrowFlare extends Order {
+export class AstronautOrder extends Order {
     astronaut: Astronaut;
+
+    constructor(astronaut: Astronaut) {
+        super();
+        this.astronaut = astronaut;
+    }
+
+    override cancel(): void {
+        this.astronaut.cancelOrders();
+        super.cancel();
+    }
+
+    queueAfterMove(range: number) {
+        let diff = this.astronaut.position.diff(this.orderTarget);
+        const c = this.astronaut.position.clone().sub(diff.sub(diff.clone().normalize(range)));
+        this.astronaut.targetPosition.set(c);
+        this.storedTarget = this.orderTarget.clone();
+        this.astronaut.queueOrder(this);
+        if (game.orderManager.currentOrder == this) game.orderManager.currentOrder = undefined;
+    }
+}
+
+
+export class AstronautThrowFlare extends AstronautOrder {
     sprite: Sprite;
     item: ItemType;
     flare: typeof FlareCore;
 
     constructor(astronaut: Astronaut, flare: typeof FlareCore, item: ItemType) {
-        super();
+        super(astronaut);
         this.astronaut = astronaut;
         this.item = item;
         this.flare = flare;
@@ -59,26 +101,40 @@ export class AstronautThrowFlare extends Order {
         this.sprite.anchor.set(0.5);
         this.sprite.scale.set(this.flare.prototype.range / texture.width * 2);
         game.containers.overlay.addChild(this.sprite);
+        astronaut.cancelOrders();
     }
 
-    override update() {
+    override plan() {
         game.controls.requestMouse(MousePriority.order, () => {
-            this.sprite.position.set(...game.controls.worldMouse.xy())
-            let inRange = game.controls.worldMouse.distance(this.astronaut) < 500;
-            if (inRange) {
-                this.sprite.tint = 0x55ff55;
-            } else {
-                this.sprite.tint = 0xff5555;
-            }
-
-            if (inRange && game.controls.clicked && this.astronaut.itemCount(this.item) > 0) {
-                const flare = new this.flare();
-                flare.position = game.controls.worldMouse.clone();
-                this.astronaut.spendItem(this.item);
-                this.destroy();
+            let inRange = this.orderTarget.distanceSquared(this.astronaut) < 500 ** 2;
+            if (game.controls.clicked && this.astronaut.itemCount(this.item) > 0) {
+                if (inRange) {
+                    this.execute();
+                } else {
+                    this.queueAfterMove(500);
+                }
             }
         });
     }
+
+    override show(): void {
+        this.sprite.position.set(...this.orderTarget.xy())
+        let inRange = this.orderTarget.distanceSquared(this.astronaut) < 500 ** 2;
+        if (inRange) {
+            this.sprite.tint = 0x55ff55;
+        } else {
+            this.sprite.tint = 0xffff55;
+        }
+    }
+
+    execute(): void {
+        const flare = new this.flare();
+        flare.position = this.orderTarget.clone();
+        this.astronaut.spendItem(this.item);
+        this.destroy();
+    }
+
+
 
     override destroy(): void {
         super.destroy();
@@ -87,31 +143,40 @@ export class AstronautThrowFlare extends Order {
 }
 
 
-export class AstronautMove extends Order {
-    astronaut: Astronaut;
+export class AstronautMove extends AstronautOrder {
     sprite: Sprite;
 
+    drillToOperate?: Drill;
+    intendToBoard = false;
+
     constructor(astronaut: Astronaut) {
-        super();
-        this.astronaut = astronaut;
+        super(astronaut);
         const texture = asset("astronaut");
         this.sprite = new Sprite(texture);
         this.sprite.anchor.set(0.5);
         game.containers.overlay.addChild(this.sprite);
+        astronaut.cancelOrders();
     }
 
-    override update() {
+    override plan() {
         game.controls.requestMouse(MousePriority.selectOrderTarget, () => {
-            this.sprite.position.set(...game.controls.worldMouse.xy())
+            this.sprite.position.set(...this.orderTarget.xy())
             this.sprite.tint = 0x55ff55;
-            this.sprite.rotation = game.controls.worldMouse.diff(this.astronaut).toAngle();
+            this.sprite.rotation = this.orderTarget.diff(this.astronaut).toAngle();
 
             this.sprite.visible = true;
             if (game.hovered && (game.hovered != game.ship && game.hovered != this.astronaut)) this.sprite.visible = false;
 
             if (game.controls.pointerDown) {
+                if (game.hovered instanceof Drill) {
+                    this.drillToOperate = game.hovered;
+                    this.execute();
+                    return true;
+                }
+
                 if (game.hovered && (game.hovered != game.ship && game.hovered != this.astronaut)) return false;
-                this.astronaut.targetPosition.set(game.controls.worldMouse);
+                this.execute();
+
                 return true
             }
 
@@ -119,22 +184,37 @@ export class AstronautMove extends Order {
         });
     }
 
+    execute(): void {
+        if (this.astronaut.operatedDrill) {
+            this.astronaut.operatedDrill.operator = undefined;
+            this.astronaut.operatedDrill = undefined;
+        }
+
+        this.astronaut.targetPosition.set(this.orderTarget);
+
+        if (this.drillToOperate) {
+            this.astronaut.operatedDrill = this.drillToOperate;
+            this.drillToOperate.operator = this.astronaut;
+            this.astronaut.targetPosition.set(this.drillToOperate);
+        }
+
+    }
+
     override destroy(): void {
         super.destroy();
         this.sprite.destroy();
     }
 }
 
-export class AstronautPlaceInstallation extends Order {
-    astronaut: Astronaut;
+export class AstronautPlaceInstallation extends AstronautOrder {
+    asteroid?: Asteroid;
     sprite: Sprite;
     girder: TilingSprite;
     item: ItemType;
     installation: typeof Installation;
 
     constructor(astronaut: Astronaut, installation: typeof Installation, item: ItemType = ItemType.ConstructionParts) {
-        super();
-        this.astronaut = astronaut;
+        super(astronaut);
         this.item = item;
         this.installation = installation;
         const texture = asset("circle");
@@ -150,39 +230,63 @@ export class AstronautPlaceInstallation extends Order {
         });
         game.containers.girder.addChild(this.girder);
         this.girder.anchor.set(0.5, 1);
+        astronaut.cancelOrders();
     }
 
-    override update() {
+    override plan() {
         game.controls.requestMouse(MousePriority.order, () => {
-            this.sprite.position.set(...game.controls.worldMouse.xy())
-            const asteroid = Array.from(game.objects.getAll("asteroid")).reduce(toNearest(game.controls.worldMouse));
-            let asteroidDist = game.controls.worldMouse.distance(asteroid);
+            this.asteroid = Array.from(game.objects.getAll("asteroid")).reduce(toNearest(this.orderTarget));
+            let asteroidDist = this.orderTarget.distance(this.asteroid);
+            this.asteroid = this.asteroid;
             let astInRange = asteroidDist < 800;
-            let inRange = game.controls.worldMouse.distance(this.astronaut) < 500 || true;
+            let inRange = this.orderTarget.distance(this.astronaut) < 200;
+
+
+            if (astInRange && game.controls.clicked && this.astronaut.itemCount(this.item) > 0) {
+                if (inRange) {
+                    this.execute();
+                } else {
+                    this.queueAfterMove(200);
+                }
+            }
+        });
+    }
+
+    show() {
+        this.sprite.position.set(...this.orderTarget.xy())
+        let inRange = this.orderTarget.distance(this.astronaut) < 200;
+
+        this.sprite.tint = 0xff5555;
+        this.girder.tint = 0xff5555;
+        if (this.asteroid) {
+
+            let asteroidDist = this.orderTarget.distance(this.asteroid);
+            let astInRange = asteroidDist < 800;
 
             if (astInRange) {
-                this.girder.position.set(...game.controls.worldMouse.xy());
-                this.girder.rotation = asteroid.position.diff(game.controls.worldMouse).toAngle() + Math.PI / 2;
+                this.girder.position.set(...this.orderTarget.xy());
+                this.girder.rotation = this.asteroid.position.diff(this.orderTarget).toAngle() + Math.PI / 2;
                 this.girder.height = asteroidDist;
                 this.girder.visible = true;
+
+                if (inRange) {
+                    this.sprite.tint = 0x55ff55;
+                    this.girder.tint = 0x55ff55;
+                } else {
+                    this.sprite.tint = 0xffff55;
+                    this.girder.tint = 0xffff55;
+                }
             } else {
                 this.girder.visible = false;
             }
 
-            if (inRange && astInRange) {
-                this.sprite.tint = 0x55ff55;
-                this.girder.tint = 0x55ff55;
-            } else {
-                this.sprite.tint = 0xff5555;
-                this.girder.tint = 0xff5555;
-            }
+        }
+    }
 
-            if (inRange && astInRange && game.controls.clicked && this.astronaut.itemCount(this.item) > 0) {
-                const installation = new this.installation(game.controls.worldMouse, asteroid);
-                this.astronaut.spendItem(this.item);
-                this.destroy();
-            }
-        });
+    execute(): void {
+        const installation = new this.installation(this.orderTarget, this.asteroid);
+        this.astronaut.spendItem(this.item);
+        this.destroy();
     }
 
     override destroy(): void {
@@ -192,49 +296,130 @@ export class AstronautPlaceInstallation extends Order {
     }
 }
 
-class PlaceTurret extends Order {
-    override update() {
-        game.controls.requestClick(MousePriority.order, () => {
 
+
+export class AstronautPlaceDrill extends AstronautOrder {
+    asteroid?: Asteroid;
+    sprite: Sprite;
+    girder: TilingSprite;
+    item: ItemType;
+
+    constructor(astronaut: Astronaut, item: ItemType = ItemType.ConstructionParts) {
+        super(astronaut);
+        this.item = item;
+        const texture = asset("drill");
+        this.sprite = new Sprite(texture);
+        this.sprite.anchor.set(0.5);
+        game.containers.overlay.addChild(this.sprite);
+
+        const girderTexture = asset("drillbit")
+        this.girder = new TilingSprite({
+            texture: girderTexture,
+            width: girderTexture.width,
+            height: 1,
         });
+        game.containers.girder.addChild(this.girder);
+        this.girder.anchor.set(0.5, 1);
+        astronaut.cancelOrders();
+    }
+
+    override plan() {
+        game.controls.requestMouse(MousePriority.order, () => {
+            let asteroids = Array.from(game.objects.getAll("asteroid"));
+            this.asteroid = undefined;
+            let dist = 150;
+            for (const ast of asteroids) {
+                if (!ast.canBuildDrill) continue;
+                let res = game.system.raycast(this.orderTarget, ast, (body) => body == ast.collider);
+                if (!res) continue
+                let useDist = Vector.fromLike(res.point).distance(this.orderTarget);
+                if (useDist < dist && useDist > 50) {
+                    this.asteroid = ast;
+                    dist = useDist;
+                }
+            }
+
+            let inRange = this.orderTarget.distance(this.astronaut) < 200;
+
+            if (this.asteroid && game.controls.clicked && this.astronaut.itemCount(this.item) > 0) {
+                if (inRange) {
+                    this.execute();
+                } else {
+                    this.queueAfterMove(200);
+                }
+            }
+        });
+
+
+    }
+
+    execute() {
+        const installation = new DrillInstallation(this.orderTarget, this.asteroid!);
+        this.astronaut.spendItem(this.item);
+        this.astronaut.targetPosition.set(installation);
+        this.astronaut.operatedDrill = installation.drill;
+        installation.drill.operator = this.astronaut;
+        this.destroy();
+    }
+
+    show(): void {
+        this.sprite.position.set(...this.orderTarget.xy())
+        let inRange = this.orderTarget.distance(this.astronaut) < 500;
+
+        this.sprite.tint = 0xff5555;
+        this.girder.tint = 0xff5555;
+        if (this.asteroid) {
+            let asteroidDist = this.orderTarget.distance(this.asteroid);
+            this.girder.position.set(...this.orderTarget.xy());
+            this.girder.rotation = this.asteroid.position.diff(this.orderTarget).toAngle() + Math.PI / 2;
+            this.sprite.rotation = this.asteroid.position.diff(this.orderTarget).toAngle();
+            this.girder.height = asteroidDist;
+            this.girder.visible = true;
+            if (inRange) {
+                this.sprite.tint = 0x55ff55;
+                this.girder.tint = 0x55ff55;
+            } else {
+                this.sprite.tint = 0xffff55;
+                this.girder.tint = 0xffff55;
+            }
+
+        } else {
+            this.girder.visible = false;
+        }
+    }
+
+    override destroy(): void {
+        super.destroy();
+        this.sprite.destroy();
+        this.girder.destroy();
     }
 }
-
-class PlaceSpotlight extends Order {
-    override update() {
-        game.controls.requestClick(MousePriority.order, () => {
-            const ast = Array.from(game.objects.getAll("asteroid")).reduce(toNearest(game.controls.worldMouse));
-            const turret = new SpotlightInstallation(game.controls.worldMouse, ast);
-        });
-    }
-}
-
 
 export class RotateTo extends Order {
-    override update() {
+    override plan() {
         game.controls.requestPointerDown(MousePriority.selectOrderTarget, () => {
-            if (game.hovered != game.ship) return false;
-            game.ship.targetRotation = game.controls.worldMouse.diff(game.ship).toAngle();
+            if (game.hovered && game.hovered != game.ship) return false;
+            game.ship.targetRotation = this.orderTarget.diff(game.ship).toAngle();
         });
     }
 }
 
 export class TranslateTo extends Order {
-    override update() {
+    override plan() {
         game.controls.requestPointerDown(MousePriority.selectOrderTarget, () => {
             if (game.hovered && game.hovered != game.ship) return false;
-            game.ship.targetPosition.set(game.controls.worldMouse);
+            game.ship.targetPosition.set(this.orderTarget);
         });
     }
 }
 
 
 export class MoveTo extends Order {
-    override update() {
+    override plan() {
         game.controls.requestPointerDown(MousePriority.selectOrderTarget, () => {
             if (game.hovered && game.hovered != game.ship) return false;
-            game.ship.targetPosition.set(game.controls.worldMouse);
-            game.ship.targetRotation = game.controls.worldMouse.diff(game.ship).toAngle();
+            game.ship.targetPosition.set(this.orderTarget);
+            game.ship.targetRotation = this.orderTarget.diff(game.ship).toAngle();
         });
     }
 }
@@ -246,9 +431,9 @@ export class SpotlightTarget extends Order {
         super();
         this.spotlight = spotlight;
     }
-    override update() {
+    override plan() {
         game.controls.requestPointerDown(MousePriority.order, () => {
-            this.spotlight.targetPosition.set(game.controls.worldMouse.clone());
+            this.spotlight.targetPosition.set(this.orderTarget.clone());
         })
     }
 }

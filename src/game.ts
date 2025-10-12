@@ -121,12 +121,13 @@ export class Game {
         this.containers.world.scale.set(0.5);
 
         const astro = new Astronaut();
+        const astro2 = new Astronaut();
+        const astro3 = new Astronaut();
+        const astro4 = new Astronaut();
 
         this.uiManager = new UiManager();
         this.orderManager = new OrderManager();
 
-        astro.select();
-        game.uiManager.updateObjectOptions(astro.uiData);
         //TODO this is only temp
         let sprite = new Sprite(Lightmap.texture);
         this.app.stage.addChild(sprite);
@@ -160,7 +161,7 @@ export class Game {
             let dist = 500;
             for (const obj of [...this.objects.getAll("selectable")]) {
                 let useDist = this.controls.worldMouse.distance(obj);
-                if (useDist < dist && obj.size > useDist) {
+                if (useDist < dist && obj.size > useDist && (obj.hoverCheck == undefined || obj.hoverCheck())) {
                     nearest = obj;
                     dist = useDist;
                 }

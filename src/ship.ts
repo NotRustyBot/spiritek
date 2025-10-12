@@ -24,6 +24,7 @@ export class Ship extends CoreObject implements ISelectable {
     repeller: PolygonRepeller;
     attractor: RangeRepeller;
     sprite: Sprite;
+    overlaySprite: Sprite;
 
     spotlightL: ShipFloodlight;
     spotlightR: ShipFloodlight;
@@ -82,6 +83,12 @@ export class Ship extends CoreObject implements ISelectable {
         this.sprite = new Sprite(asset("ship"));
         game.containers.ship.addChild(this.sprite);
         this.sprite.anchor.set(0.5);
+
+        this.overlaySprite = new Sprite(asset("ship"));
+        game.containers.overlay.addChild(this.overlaySprite);
+        this.overlaySprite.anchor.set(0.5);
+        this.overlaySprite.tint = 0x55ff55;
+
         this.attractor = new RangeRepeller();
         this.attractor.range = 1800;
         this.attractor.emotional = true;
@@ -94,10 +101,11 @@ export class Ship extends CoreObject implements ISelectable {
         this.spotlightR = new ShipFloodlight({ x: -50, y: -100 }, this);
 
         this.turret = new ShipTurret({ x: 300, y: 0 }, this);
-        this.turret.turret.range = 1000;
+        this.turret.turret.range = 1500;
 
-        this.x = 1000;
-        this.y = 500;
+        this.spotlightL.spotlight.targetPosition.set(-1000, 500);
+        this.spotlightR.spotlight.targetPosition.set(-1000, -500);
+
         this.rotation = -1;
     }
 
@@ -116,6 +124,10 @@ export class Ship extends CoreObject implements ISelectable {
         ISelectableBase.unhover(this, this.sprite);
     }
 
+    hoverCheck(): boolean {
+        return this.repeller.check(game.controls.worldMouse);
+    }
+
     clocky = new Clocky(1);
 
     update() {
@@ -123,6 +135,9 @@ export class Ship extends CoreObject implements ISelectable {
         this.attractor.position.set(this);
         this.sprite.position.set(this.x, this.y);
         this.sprite.rotation = this.rotation;
+
+        this.overlaySprite.position.set(this.targetPosition.x, this.targetPosition.y);
+        this.overlaySprite.rotation = this.targetRotation;
 
         const rotSpeed = 0.3;
         if (this.rotation != this.targetRotation) {
@@ -139,6 +154,9 @@ export class Ship extends CoreObject implements ISelectable {
             } else {
                 this.position.add(diff.normalize(speed));
             }
+            this.overlaySprite.visible = true;
+        } else {
+            this.overlaySprite.visible = false;
         }
 
         this.spotlightL.update();

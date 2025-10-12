@@ -9,7 +9,7 @@ export class ISelectableBase {
         container.filters = [filtre];
     }
 
-   static unhover(select: ISelectable, container: Container) {
+    static unhover(select: ISelectable, container: Container) {
         container.filters = [];
     }
 }

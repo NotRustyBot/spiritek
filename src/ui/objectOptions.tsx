@@ -4,6 +4,10 @@ import { itemDefinition, ItemType } from "../items"
 
 export type ObjectOptionsData = {
     name: string,
+    stats?: Array<{
+        name: string,
+        value: string
+    }>
     actions?: Array<{
         name: string,
         action: () => void,
@@ -22,6 +26,20 @@ export function ObjectOptions(data?: ObjectOptionsData) {
     if (data == undefined) return <div id="object-options" style="display:none;" />
 
     const sections = new Array<HTMLElement>();
+
+    if (data.stats) {
+        sections.push(
+            <div >
+                {data.stats?.map((s) => {
+                    let ref: HTMLDivElement;
+                    return <div>
+                        <span>{s.name}</span>
+                        <span>{s.value}</span>
+                    </div>
+                })}
+            </div>
+        )
+    }
     if (data.actions) {
         sections.push(
             <div class="option-container">

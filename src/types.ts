@@ -6,14 +6,14 @@ export interface ObjectKinds {
     preupdate: { preupdate(): void }
     updatable: { update(): void }
     drawable: { draw(): void }
-    shadowCaster: {drawShadow(renderer:Renderer,texture:RenderTexture): void}
+    shadowCaster: { drawShadow(renderer: Renderer, texture: RenderTexture): void }
     postprocess: { postprocess(): void }
     scenebound: { destroy(): void }
     debug: { debug(graphics: Graphics): void }
     selectable: ISelectable;
 }
 
-export type ISelectable = CoreObject & { uiData?: ObjectOptionsData, select?(): void, unselect?(): void, hover?(): void, unhover?(): void, size: number }
+export type ISelectable = CoreObject & { uiData?: ObjectOptionsData, hoverCheck?(): boolean, select?(): void, unselect?(): void, hover?(): void, unhover?(): void, size: number }
 
 export type ObjectKind = keyof ObjectKinds;
 

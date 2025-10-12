@@ -73,7 +73,7 @@ export class Spotlight extends CoreObject implements ISelectable {
 
         this.repeller.hit = (s: Spirit) => {
             let proximity = 1 - (s.position.distance(this) / scale) / s.power;
-            let power = (proximity) * this.repeller.strength * 0.5;
+            let power = (proximity) * this.repeller.strength * 0.3;
 
             if (this.repeller.strength > 0.03) {
                 this.repeller.strength -= s.power * 0.1 * game.dt * (1 - proximity) * this.repeller.strength;

@@ -38,6 +38,7 @@ export class RangeRepeller extends CoreObject implements IRepeller {
     hit = (spirit: Spirit) => { };
 
     debug(graphics: Graphics) {
+        if(!this.enabled) return;
         graphics.circle(this.x, this.y, this.range);
         graphics.stroke({ color: debugColor(this), width: 1 / game.containers.world.scale.x });
     }
@@ -74,7 +75,7 @@ export class PolygonRepeller extends CoreObject implements IRepeller {
     hit = (strength: Spirit) => { };
 
     debug(graphics: Graphics) {
-
+        if(!this.enabled) return;
         if (this.cachedPolygon.length == 0) return;
         graphics.moveTo(this.x + this.cachedPolygon[0][0], this.y + this.cachedPolygon[0][1]);
 

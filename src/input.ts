@@ -13,7 +13,7 @@ export class ControlManager {
     pressed: Record<string, boolean> = {};
     held: Record<string, boolean> = {};
     released: Record<string, boolean> = {};
-    mousePosition = new Vector();
+    mousePosition = new Vector(window.innerWidth / 2, window.innerHeight / 2);
     pointerDown = false;
     clicked = false;
     rightClicked = false;

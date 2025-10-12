@@ -7,6 +7,7 @@ import { Renderer, RenderTexture, Sprite } from "pixi.js";
 import { asset, rotate } from "./util";
 import { game } from "./game";
 import { Polygon } from "check2d";
+import { Drill } from "./drill";
 
 const hitboxLookup = {
     "stone_1": stone1,
@@ -18,6 +19,13 @@ export class Asteroid extends CoreObject {
     repeller: PolygonRepeller;
     sprite: Sprite;
     collider: Polygon;
+    drill?: Drill;
+
+    resource = 100;
+
+    get canBuildDrill() {
+        return this.drill == undefined && this.resource > 0;
+    }
 
     constructor(stone: keyof typeof hitboxLookup, rotation = 0, x = 0, y = 0) {
         super("asteroid", "shadowCaster");

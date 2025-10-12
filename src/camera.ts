@@ -27,18 +27,18 @@ export class Camera extends CoreObject {
     }
 
     constructor() {
-        super( "Camera");
+        super("Camera");
     }
 
     update() {
-        let dist = game.controls.mousePosition.clone().distance(this.center);
+        const mouse = game.controls.mousePosition;
+        const thickness = 50;
+        const speed = 1000;
 
-        if (dist > this.height / 3) {
-            dist -= this.height / 3;
-            dist /= this.height;
-            dist = Math.min(dist * 5, 1);
-            this.position.add(game.controls.mousePosition.diff(this.center).normalize(10 * dist / this.zoom));
-        }
+        if (mouse.x < thickness) game.camera.x -= speed / this.zoom * game.dt;
+        if (mouse.x > this.width - thickness) game.camera.x += speed / this.zoom * game.dt;
+        if (mouse.y < thickness) game.camera.y -= speed / this.zoom * game.dt;
+        if (mouse.y > this.height - thickness) game.camera.y += speed / this.zoom * game.dt;
 
         if (game.controls.wheel != 0) {
             let zoom = this.zoom * 1 + (-Math.sign(game.controls.wheel) / 10) * Math.abs(this.zoom);
@@ -51,7 +51,7 @@ export class Camera extends CoreObject {
         game.containers.world.y = (-this.y * this.zoom + window.innerHeight / 2);
     }
 
-    worldToRender(position:Vector){
-        return position.clone().sub(this.position).mult(this.zoom).vecdiv(new Vector(window.innerWidth, window.innerHeight)).add(new Vector(0.5,0.5));
+    worldToRender(position: Vector) {
+        return position.clone().sub(this.position).mult(this.zoom).vecdiv(new Vector(window.innerWidth, window.innerHeight)).add(new Vector(0.5, 0.5));
     }
 }
