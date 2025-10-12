@@ -158,7 +158,7 @@ export class AstronautPlaceInstallation extends Order {
             const asteroid = Array.from(game.objects.getAll("asteroid")).reduce(toNearest(game.controls.worldMouse));
             let asteroidDist = game.controls.worldMouse.distance(asteroid);
             let astInRange = asteroidDist < 800;
-            let inRange = game.controls.worldMouse.distance(this.astronaut) < 500;
+            let inRange = game.controls.worldMouse.distance(this.astronaut) < 500 || true;
 
             if (astInRange) {
                 this.girder.position.set(...game.controls.worldMouse.xy());

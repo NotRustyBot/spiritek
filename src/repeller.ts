@@ -23,19 +23,23 @@ export class RangeRepeller extends CoreObject implements IRepeller {
     emotional = false;
     enabled = true;
     noStrength = false;
+    lineOfSight = false;
     constructor() {
         super("repeller", "debug");
     }
 
     check(pos: Vectorlike) {
-        return this.enabled && (this.position.distanceSquared(pos) < this.range ** 2);
+        if (!this.enabled) return false;
+        if (!(this.position.distanceSquared(pos) < this.range ** 2)) return false;
+        if (this.lineOfSight && game.system.raycast(this, pos)) return false;
+        return true;
     }
 
     hit = (spirit: Spirit) => { };
 
     debug(graphics: Graphics) {
         graphics.circle(this.x, this.y, this.range);
-        graphics.stroke({ color: debugColor(this), width: 1 / game.containers.world.scale.x});
+        graphics.stroke({ color: debugColor(this), width: 1 / game.containers.world.scale.x });
     }
 }
 
@@ -47,6 +51,7 @@ export class PolygonRepeller extends CoreObject implements IRepeller {
     cachedPolygon = new Array<[number, number]>();
     sourcePolygon = new Array<Vectorlike>();
     boxSize = 0;
+    lineOfSight = false;
     constructor() {
         super("repeller", "debug");
     }
@@ -60,7 +65,10 @@ export class PolygonRepeller extends CoreObject implements IRepeller {
     check(pos: Vectorlike) {
         if (!this.enabled) return false;
         if (!(this.position.boxDistance(pos) < this.boxSize ** 2)) return false;
-        return pointInPolygon([pos.x - this.x, pos.y - this.y], this.cachedPolygon);
+        if (!pointInPolygon([pos.x - this.x, pos.y - this.y], this.cachedPolygon)) return false;
+        if (this.lineOfSight && game.system.raycast(this, pos)) return false;
+        return true
+
     }
 
     hit = (strength: Spirit) => { };

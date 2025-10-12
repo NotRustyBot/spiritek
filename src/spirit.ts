@@ -98,7 +98,7 @@ export class Spirit extends CoreObject {
         this.emotional = false;
         for (const repeller of eReps) {
             if (!repeller.emotional) continue;
-            this.repellerCheck(repeller);
+            if (this.repellerCheck(repeller)) break;
         }
 
         if (!this.emotional) this.velocity.add(this.direction);
@@ -115,7 +115,7 @@ export class Spirit extends CoreObject {
 
         for (const repeller of repellers) {
             if (repeller.emotional) continue;
-            if (this.repellerCheck(repeller)) break;
+            this.repellerCheck(repeller);
         }
 
         this.fadeAway.check();

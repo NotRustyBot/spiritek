@@ -6,6 +6,7 @@ import stone2 from "./hitbox/stone2.json"
 import { Renderer, RenderTexture, Sprite } from "pixi.js";
 import { asset, rotate } from "./util";
 import { game } from "./game";
+import { Polygon } from "check2d";
 
 const hitboxLookup = {
     "stone_1": stone1,
@@ -16,6 +17,7 @@ declare module "./types" { interface ObjectKinds { asteroid: Asteroid } }
 export class Asteroid extends CoreObject {
     repeller: PolygonRepeller;
     sprite: Sprite;
+    collider: Polygon;
 
     constructor(stone: keyof typeof hitboxLookup, rotation = 0, x = 0, y = 0) {
         super("asteroid", "shadowCaster");
@@ -27,7 +29,7 @@ export class Asteroid extends CoreObject {
         this.repeller = new PolygonRepeller();
         const polygon = rotate(hitboxLookup[stone], rotation);
         this.repeller.setPolygon(polygon);
-
+        this.collider = game.system.createPolygon(this.position, polygon);
         this.teleport(x, y);
 
     }
@@ -39,6 +41,7 @@ export class Asteroid extends CoreObject {
         this.sprite.position.set(x, y);
         this.repeller.x = x;
         this.repeller.y = y;
+        this.collider.setPosition(x, y);
     }
 
     drawShadow(renderer: Renderer, texture: RenderTexture) {

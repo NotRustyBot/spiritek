@@ -14,6 +14,7 @@
   },
   "dependencies": {
     "@types/point-in-polygon": "^1.1.5",
+    "check2d": "^9.30.1",
     "htcrud": "github:NotRustyBot/htcrud",
     "hyphenate-style-name": "^1.1.0",
     "pixi-filters": "^6.1.4",

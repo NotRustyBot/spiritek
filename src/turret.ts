@@ -25,7 +25,7 @@ export class Turret extends CoreObject implements ISelectable {
     confused = false;
 
     constructor() {
-        super("updatable", "drawable", "selectable");
+        super("updatable", "drawable", "selectable", "debug");
         this.sprite = new Sprite(asset("turret"));
         this.sprite.anchor.set(0.5);
         game.containers.items.addChild(this.sprite);
@@ -52,8 +52,10 @@ export class Turret extends CoreObject implements ISelectable {
                 if (spirit.power <= 1) continue;
                 let cdist = spirit.position.distance(this);
                 if (cdist < dist) {
-                    dist = cdist;
-                    nearest = spirit;
+                    if (!game.system.raycast(this, spirit)) {
+                        dist = cdist;
+                        nearest = spirit;
+                    }
                 }
             }
 
@@ -64,6 +66,30 @@ export class Turret extends CoreObject implements ISelectable {
 
             if (fireTick && nearest) {
                 const proj = new Projectile(this.position, nearest);
+            }
+        }
+    }
+
+    debug() {
+        let dist = this.range;
+        for (const spirit of Array.from(game.objects.getAll("spirit"))) {
+            if (spirit.power <= 1) continue;
+            let cdist = spirit.position.distance(this);
+            if (cdist < dist) {
+                let res = game.system.raycast(this, spirit)
+                if (res) {
+                    game.debugGraphics.moveTo(this.x, this.y);
+                    game.debugGraphics.lineTo(spirit.x, spirit.y);
+                    game.debugGraphics.stroke({ color: 0x999999, width: 1 / game.camera.zoom });
+
+                    game.debugGraphics.moveTo(this.x, this.y);
+                    game.debugGraphics.lineTo(res.point.x, res.point.y);
+                    game.debugGraphics.stroke({ color: 0xff0000, width: 1 / game.camera.zoom });
+                } else {
+                    game.debugGraphics.moveTo(this.x, this.y);
+                    game.debugGraphics.lineTo(spirit.x, spirit.y);
+                    game.debugGraphics.stroke({ color: 0x99ff99, width: 1 / game.camera.zoom });
+                }
             }
         }
     }

@@ -108,6 +108,14 @@ export class Ship extends CoreObject implements ISelectable {
         game.orderManager.newOrder(order);
     }
 
+    hover(): void {
+        ISelectableBase.hover(this, this.sprite);
+    }
+
+    unhover(): void {
+        ISelectableBase.unhover(this, this.sprite);
+    }
+
     clocky = new Clocky(1);
 
     update() {

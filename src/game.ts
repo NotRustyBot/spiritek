@@ -14,6 +14,7 @@ import { OrderManager } from "./orderManager";
 import { Lightmap } from "./lighting/lightmap";
 import { Shadowmap } from "./lighting/shadowmap";
 import { Light } from "./lighting/light";
+import { System } from "check2d"
 
 export let game: Game;
 
@@ -63,6 +64,8 @@ export class Game {
 
     shadowCasterTexture: RenderTexture;
 
+    system!: System;
+
 
     constructor(app: Application) {
         game = this;
@@ -83,6 +86,7 @@ export class Game {
     init() {
         console.log("init real");
         Lightmap.init();
+        this.system = new System();
         this.ship = new Ship();
         this.app.stage.addChild(this.containers.backdrop);
         this.app.stage.addChild(this.containers.world);
@@ -220,9 +224,8 @@ export class Game {
             obj.postprocess();
         }
 
-
         for (const obj of [...this.objects.getAll("debug")]) {
-            //obj.debug(this.debugGraphics);
+            obj.debug(this.debugGraphics);
         }
 
     }
