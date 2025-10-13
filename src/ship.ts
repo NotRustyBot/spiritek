@@ -30,37 +30,52 @@ export class Ship extends CoreObject implements ISelectable {
     spotlightR: ShipFloodlight;
     turret: ShipTurret;
 
-    uiData: ObjectOptionsData = {
-        name: "Spiritek",
-        actions: [
-            {
-                name: "Move",
-                icon: "img/ship.png",
-                active: () => (game.orderManager.currentOrder instanceof MoveTo),
-                action: () => {
-                    const order = new MoveTo();
-                    game.orderManager.newOrder(order);
+    resist = 1000;
+    ui = {
+        setResist: (value: string) => { }
+    }
+
+    get uiData(): ObjectOptionsData {
+        return {
+            name: "Spiritek",
+            stats: [
+                {
+                    name: "resist",
+                    updateHandler: (updater) => {
+                        this.ui.setResist = updater;
+                    }
                 }
-            },
-            {
-                name: "Translate",
-                icon: "img/ship.png",
-                active: () => (game.orderManager.currentOrder instanceof TranslateTo),
-                action: () => {
-                    const order = new TranslateTo();
-                    game.orderManager.newOrder(order);
+            ],
+            actions: [
+                {
+                    name: "Move",
+                    icon: "img/ship.png",
+                    active: () => (game.orderManager.currentOrder instanceof MoveTo),
+                    action: () => {
+                        const order = new MoveTo();
+                        game.orderManager.newOrder(order);
+                    }
+                },
+                {
+                    name: "Translate",
+                    icon: "img/ship.png",
+                    active: () => (game.orderManager.currentOrder instanceof TranslateTo),
+                    action: () => {
+                        const order = new TranslateTo();
+                        game.orderManager.newOrder(order);
+                    }
+                },
+                {
+                    name: "Rotate",
+                    icon: "img/ship.png",
+                    active: () => (game.orderManager.currentOrder instanceof RotateTo),
+                    action: () => {
+                        const order = new RotateTo();
+                        game.orderManager.newOrder(order);
+                    }
                 }
-            },
-            {
-                name: "Rotate",
-                icon: "img/ship.png",
-                active: () => (game.orderManager.currentOrder instanceof RotateTo),
-                action: () => {
-                    const order = new RotateTo();
-                    game.orderManager.newOrder(order);
-                }
-            }
-        ]
+            ]
+        }
     }
 
     private _rotation = 0;
@@ -96,6 +111,9 @@ export class Ship extends CoreObject implements ISelectable {
 
         this.repeller = new PolygonRepeller();
         this.repeller.setPolygon(shipHitbox);
+        this.repeller.hit = (spirit: Spirit) => {
+            this.resist -= game.dt * 4;
+        };
 
         this.spotlightL = new ShipFloodlight({ x: -50, y: 100 }, this);
         this.spotlightR = new ShipFloodlight({ x: -50, y: -100 }, this);
@@ -158,6 +176,8 @@ export class Ship extends CoreObject implements ISelectable {
         } else {
             this.overlaySprite.visible = false;
         }
+
+        this.ui.setResist(this.resist.toFixed(0));
 
         this.spotlightL.update();
         this.spotlightR.update();

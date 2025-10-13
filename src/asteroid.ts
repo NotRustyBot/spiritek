@@ -21,7 +21,7 @@ export class Asteroid extends CoreObject {
     collider: Polygon;
     drill?: Drill;
 
-    resource = 100;
+    resource = 120;
 
     get canBuildDrill() {
         return this.drill == undefined && this.resource > 0;

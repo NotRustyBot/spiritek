@@ -9,31 +9,47 @@ import { ISelectable } from "./types";
 import { OutlineFilter } from "pixi-filters";
 import { ISelectableBase } from "./select";
 import { Light } from "./lighting/light";
-import { Vector } from "./vector";
+import { Vector, Vectorlike } from "./vector";
 import { CustomColor } from "./lighting/color";
+import { Astronaut } from "./astronaut";
 
 export class FlareCore extends CoreObject implements ISelectable {
     sprite: Sprite;
     glow: Sprite;
     light: Light;
     repeller = new RangeRepeller();
+    grabbedBy?: Astronaut;
 
     clocky: Clocky;
 
     strength = 0;
 
+    targetPosition = new Vector();
+    tossed = false;
+
+    tossClock: Clocky;
+
+    toss(position: Vectorlike) {
+        this.targetPosition.set(position);
+        this.tossClock.time = 0;
+        this.tossClock.stop = false;
+    }
+
 
     get range() { return 500 };
     color = 0xffff00;
-    constructor() {
+    constructor(position: Vectorlike) {
         super("updatable", "drawable", "selectable");
         this.sprite = new Sprite(asset("flare"));
         game.containers.items.addChild(this.sprite);
-        this.sprite.rotation = Math.random() * Math.PI * 2;
+
         this.sprite.anchor.set(0.5);
         this.glow = new Sprite(asset("light"));
         game.containers.light.addChild(this.glow);
         this.glow.anchor.set(0.5);
+        this.tossClock = Clocky.once(1);
+        this.tossClock.during = () => { this.position.set(Vector.lerp(position, this.targetPosition, this.tossClock.progress)) }
+        this.tossClock.tick = () => { this.position.set(this.targetPosition) }
 
         this.repeller.hit = (spirit: Spirit) => {
             this.hit(spirit)
@@ -67,11 +83,10 @@ export class FlareCore extends CoreObject implements ISelectable {
 
     update() {
         this.clocky.check();
+        this.tossClock.check();
 
         this.repeller.x = this.x;
         this.repeller.y = this.y;
-
-
 
         if (this.strength < 1) {
             this.strength = Math.min(1, this.strength + game.dt);
@@ -89,10 +104,21 @@ export class FlareCore extends CoreObject implements ISelectable {
         this.light.angle = this.sprite.rotation;
         this.glow.alpha = 0;
 
+        this.sprite.rotation = this.position.x / 100;
+
         this.repeller.range = this.strength * this.range;
 
         this.sprite.position.set(this.x, this.y);
         this.glow.position.set(this.x, this.y);
+    }
+
+    destroy(): void {
+        super.destroy();
+        this.sprite.destroy();
+        this.light.remove();
+        this.repeller.destroy();
+        if (this.grabbedBy) this.grabbedBy.grabbedFlare = undefined;
+        this.grabbedBy = undefined;
     }
 }
 
@@ -101,7 +127,8 @@ export class RepellFlare extends FlareCore {
     override get range() { return 500 };
 
     override hit(spirit: Spirit) {
-        this.strength -= 0.05;
+        if (this.clocky.stop) this.strength -= 0.05;
+        if (this.strength < 0.05) this.destroy();
     }
 
 }
@@ -113,7 +140,8 @@ export class KillFlare extends FlareCore {
 
     override hit(spirit: Spirit) {
         this.strength -= 0.1;
-        spirit.power -= 0.2;
+        if (this.clocky.stop) spirit.power -= 0.2;
+        if (this.strength < 0.05) this.destroy();
     }
 }
 
@@ -121,8 +149,8 @@ export class AttractFlare extends FlareCore { // test
     color = 0xff00ff;
     override get range() { return 800 };
 
-    constructor() {
-        super();
+    constructor(position: Vectorlike) {
+        super(position);
         this.repeller.strength = -0.025;
         this.repeller.emotional = true;
     }

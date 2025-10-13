@@ -16,7 +16,7 @@ export class WaveManager extends CoreObject {
     speed = 0.1;
 
     size = 6000;
-    spawnClocky = new Clocky(0.75);
+    spawnClocky = new Clocky(1.1);
 
     background: Sprite;
     light: Sprite;
@@ -30,12 +30,12 @@ export class WaveManager extends CoreObject {
         this.light.anchor.set(0.5);
         this.light.scale.set(this.size / 350);
         this.clocky = Clocky.sequence([
-          //  { time: 10 },
-          //  { time: 10, during: () => { this.angle += game.dts * 0.15 } },
+            { time: 60 },
+            //{ time: 10, during: () => { this.angle += game.dts * 0.15 } },
           //  { time: 10 },
           //  { time: 10, during: () => { this.angle -= game.dts * 0.15 } },
           //  { time: 10 },
-            //{ time: 100, during: () => { this.spawnClocky.limit = 1.1 - this.clocky.progress } },
+            { time: 100, during: () => { this.spawnClocky.limit = 1.1 - this.clocky.progress } },
         ]);
     }
 

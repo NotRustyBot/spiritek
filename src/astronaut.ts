@@ -10,8 +10,8 @@ import { RangeRepeller } from "./repeller";
 import { Spirit } from "./spirit";
 import { ObjectOptionsData } from "./ui/objectOptions";
 import { ItemType } from "./items";
-import { AstronautMove, AstronautPlaceDrill, AstronautPlaceInstallation, AstronautThrowFlare, Order, OrderManager } from "./orderManager";
-import { KillFlare, RepellFlare } from "./flare";
+import { AstronautGrabFlare, AstronautMove, AstronautPlaceDrill, AstronautPlaceInstallation, AstronautThrowFlare, AstronautTossGrabbedFlare, Order, OrderManager } from "./orderManager";
+import { FlareCore, KillFlare, RepellFlare } from "./flare";
 import { SpotlightInstallation, TurretInstallation } from "./installation";
 import { Drill } from "./drill";
 
@@ -24,6 +24,7 @@ export class Astronaut extends CoreObject implements ISelectable {
     attractor = new RangeRepeller();
     enterShipIntent = false;
     operatedDrill?: Drill;
+    grabbedFlare?: FlareCore;
     rotation = 0;
 
     items: Array<{ count: number, item: ItemType }> = [
@@ -32,56 +33,89 @@ export class Astronaut extends CoreObject implements ISelectable {
         { count: 2, item: ItemType.RepellFlare },
     ]
 
+    ui = {
+        setResistValue: (e: string) => { }
+    }
+
     get uiData(): ObjectOptionsData {
-        const stats = [{
+        const stats: ObjectOptionsData["stats"] = [{
             name: "resist",
             value: this.resist.toFixed(0),
+            updateHandler: (updater) => {
+                this.ui.setResistValue = updater;
+            }
         }];
         const actions = [];
 
-        actions.push({
-            name: "Move",
-            icon: "img/astronaut.png",
-            active: () => (game.orderManager.currentOrder instanceof AstronautMove),
-            action: () => {
-                const order = new AstronautMove(this);
-                game.orderManager.newOrder(order);
-            },
-        })
+        if (!this.incapacitated) {
 
-        if (this.itemCount(ItemType.ConstructionParts) > 0) {
             actions.push({
-                name: "Build Spotlight",
-                icon: "img/spotlight.png",
-                active: () => (game.orderManager.currentOrder instanceof AstronautPlaceInstallation && game.orderManager.currentOrder.installation == SpotlightInstallation),
+                name: "Move",
+                icon: "img/astronaut.png",
+                active: () => (game.orderManager.currentOrder instanceof AstronautMove),
                 action: () => {
-                    const order = new AstronautPlaceInstallation(this, SpotlightInstallation);
+                    const order = new AstronautMove(this);
                     game.orderManager.newOrder(order);
                 },
             })
 
-            actions.push({
-                name: "Build Turret",
-                icon: "img/turret.png",
-                active: () => (game.orderManager.currentOrder instanceof AstronautPlaceInstallation && game.orderManager.currentOrder.installation == TurretInstallation),
-                action: () => {
-                    const order = new AstronautPlaceInstallation(this, TurretInstallation);
-                    game.orderManager.newOrder(order);
-                },
-            })
+            if (this.itemCount(ItemType.ConstructionParts) > 0) {
+                actions.push({
+                    name: "Build Spotlight",
+                    icon: "img/spotlight.png",
+                    active: () => (game.orderManager.currentOrder instanceof AstronautPlaceInstallation && game.orderManager.currentOrder.installation == SpotlightInstallation),
+                    action: () => {
+                        const order = new AstronautPlaceInstallation(this, SpotlightInstallation);
+                        game.orderManager.newOrder(order);
+                    },
+                })
+
+                actions.push({
+                    name: "Build Turret",
+                    icon: "img/turret.png",
+                    active: () => (game.orderManager.currentOrder instanceof AstronautPlaceInstallation && game.orderManager.currentOrder.installation == TurretInstallation),
+                    action: () => {
+                        const order = new AstronautPlaceInstallation(this, TurretInstallation);
+                        game.orderManager.newOrder(order);
+                    },
+                })
+            }
+
+
+            if (this.itemCount(ItemType.ConstructionParts) > 0) {
+                actions.push({
+                    name: "Build Drill",
+                    icon: "img/drill.png",
+                    active: () => (game.orderManager.currentOrder instanceof AstronautPlaceDrill),
+                    action: () => {
+                        const order = new AstronautPlaceDrill(this);
+                        game.orderManager.newOrder(order);
+                    },
+                })
+            }
+            if (this.grabbedFlare == undefined) {
+                actions.push({
+                    name: "Grab Flare",
+                    icon: "img/flare.png",
+                    active: () => (game.orderManager.currentOrder instanceof AstronautGrabFlare),
+                    action: () => {
+                        const order = new AstronautGrabFlare(this);
+                        game.orderManager.newOrder(order);
+                    },
+                })
+            } else {
+                actions.push({
+                    name: "Toss Flare",
+                    icon: "img/flare.png",
+                    active: () => (game.orderManager.currentOrder instanceof AstronautTossGrabbedFlare),
+                    action: () => {
+                        const order = new AstronautTossGrabbedFlare(this);
+                        game.orderManager.newOrder(order);
+                    },
+                })
+            }
         }
 
-        if (this.itemCount(ItemType.ConstructionParts) > 0) {
-            actions.push({
-                name: "Build Drill",
-                icon: "img/drill.png",
-                active: () => (game.orderManager.currentOrder instanceof AstronautPlaceDrill),
-                action: () => {
-                    const order = new AstronautPlaceDrill(this);
-                    game.orderManager.newOrder(order);
-                },
-            })
-        }
 
         return {
             name: "Astronaut",
@@ -141,6 +175,7 @@ export class Astronaut extends CoreObject implements ISelectable {
     speed = 120;
     resist = 100;
     stressTimer = 0;
+    incapacitated = false;
 
     targetPosition = new Vector();
 
@@ -157,12 +192,20 @@ export class Astronaut extends CoreObject implements ISelectable {
 
         this.attractor.strength = -1;
         this.attractor.emotional = true;
-        this.attractor.range = 500;
+        this.attractor.range = 750;
+
 
         this.attractor.hit = (spirit: Spirit) => {
             if (spirit.position.distanceSquared(this) < 100 ** 2) {
                 this.resist -= game.dt * 5;
                 this.stressTimer = 1;
+                if (this.resist < 0) {
+                    this.incapacitated = true;
+                    this.attractor.enabled = false;
+                    this.resist = 0;
+                    this.overlaySprite.visible = false;
+                    this.cancelOrders();
+                }
             }
         }
     }
@@ -183,6 +226,7 @@ export class Astronaut extends CoreObject implements ISelectable {
     size = 50;
 
     update() {
+        if (this.incapacitated) return;
         const dsq = this.position.distanceSquared(this.targetPosition);
         this.moving = false;
         if (dsq > 1) {
@@ -205,6 +249,10 @@ export class Astronaut extends CoreObject implements ISelectable {
 
         this.attractor.position.set(this);
 
+        if (this.grabbedFlare) {
+            this.grabbedFlare.position.set(this).add(this.targetPosition.clone().normalize(30));
+        }
+
         if (this.stressTimer > 0) {
             this.stressTimer -= game.dt;
         } else {
@@ -212,6 +260,9 @@ export class Astronaut extends CoreObject implements ISelectable {
                 this.resist += game.dt * 10;
             }
         }
+
+        this.ui.setResistValue(this.resist.toFixed(0));
+
     }
 
     draw() {

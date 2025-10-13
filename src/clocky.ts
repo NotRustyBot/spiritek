@@ -27,7 +27,6 @@ export class Clocky {
     static once(limit: number) {
         const once = new Clocky(limit);
         once.repeat = 1;
-        once.repeat = 1;
         return once;
     }
 

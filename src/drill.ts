@@ -8,6 +8,7 @@ import { Asteroid } from "./asteroid";
 import { Astronaut } from "./astronaut";
 import { Vector } from "./vector";
 import { Installation } from "./installation";
+import { ObjectOptionsData } from "./ui/objectOptions";
 
 
 export class Drill extends CoreObject implements ISelectable {
@@ -18,6 +19,23 @@ export class Drill extends CoreObject implements ISelectable {
     installation: Installation;
 
     working = false;
+
+    updateExtraction = (value: string) => { }
+
+    get uiData(): ObjectOptionsData {
+        return {
+            name: "Drill",
+            stats: [
+                {
+                    name: "Extraction",
+                    value: "xx",
+                    updateHandler: (updater) => {
+                        this.updateExtraction = updater;
+                    }
+                }
+            ]
+        }
+    }
 
     constructor(asteroid: Asteroid, installation: Installation) {
         super("updatable", "drawable", "selectable",);
@@ -43,11 +61,14 @@ export class Drill extends CoreObject implements ISelectable {
 
     update() {
         this.working = false;
-        if (this.operator) {
+        if (this.operator && this.asteroid.resource > 0) {
             if (this.operator.position.distanceSquared(this) < 100 ** 2 && this.operator.stressTimer <= 0) {
                 this.working = true;
+                this.asteroid.resource -= game.dt;
             }
         }
+
+        this.updateExtraction(this.asteroid.resource.toFixed(1));
 
         this.installation.attractor.enabled = this.working
     }

@@ -6,12 +6,12 @@ export type ObjectOptionsData = {
     name: string,
     stats?: Array<{
         name: string,
-        value: string
+        value?: string
+        updateHandler?: (updater: (value: string) => void) => void
     }>
     actions?: Array<{
         name: string,
         action: () => void,
-        disabled?: () => boolean,
         active?: () => boolean,
         icon: string,
     }>,
@@ -22,6 +22,8 @@ export type ObjectOptionsData = {
     }>
 }
 
+
+
 export function ObjectOptions(data?: ObjectOptionsData) {
     if (data == undefined) return <div id="object-options" style="display:none;" />
 
@@ -29,12 +31,17 @@ export function ObjectOptions(data?: ObjectOptionsData) {
 
     if (data.stats) {
         sections.push(
-            <div >
+            <div>
                 {data.stats?.map((s) => {
-                    let ref: HTMLDivElement;
                     return <div>
                         <span>{s.name}</span>
-                        <span>{s.value}</span>
+                        <span ref={(e: HTMLSpanElement) => {
+                            if (s.updateHandler) {
+                                s.updateHandler((v) => {
+                                    e.innerHTML = v;
+                                });
+                            }
+                        }}>{s.value}</span>
                     </div>
                 })}
             </div>
@@ -47,17 +54,9 @@ export function ObjectOptions(data?: ObjectOptionsData) {
                     let ref: HTMLDivElement;
                     return <div class={
                         "object-action"
-                        + ((!(d.disabled == undefined || d.disabled())) ? " disabled" : "")
                         + (d.active?.() ? " active" : "")
                     }
                         ref={(e: HTMLDivElement) => { ref = e }}
-                        onMouseEnter={() => {
-                            if (d.disabled == undefined || d.disabled()) {
-                                ref.classList.remove("disabled");
-                            } else {
-                                ref.classList.add("disabled");
-                            }
-                        }}
                         onClick={() => {
                             d.action();
                         }}

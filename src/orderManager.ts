@@ -75,13 +75,38 @@ export class AstronautOrder extends Order {
         super.cancel();
     }
 
-    queueAfterMove(range: number) {
+    executeAfterMove(range: number) {
         let diff = this.astronaut.position.diff(this.orderTarget);
         const c = this.astronaut.position.clone().sub(diff.sub(diff.clone().normalize(range)));
         this.astronaut.targetPosition.set(c);
         this.storedTarget = this.orderTarget.clone();
         this.astronaut.queueOrder(this);
         if (game.orderManager.currentOrder == this) game.orderManager.currentOrder = undefined;
+    }
+
+    getNearestAsteroid(searchRange: number, aboveSurface: number) {
+        let asteroids = Array.from(game.objects.getAll("asteroid"));
+        let asteroid = undefined;
+        this.storedTarget = undefined;
+        let dist = searchRange;
+        let respoint = new Vector();
+        for (const ast of asteroids) {
+            if (!ast.canBuildDrill) continue;
+            let res = game.system.raycast(this.orderTarget, ast, (body) => body == ast.collider);
+            if (!res) continue
+            let useDist = Vector.fromLike(res.point).distance(this.orderTarget);
+            if (useDist < dist && useDist > 50) {
+                respoint.set(res.point);
+                asteroid = ast;
+                dist = useDist;
+            }
+        }
+
+        if (asteroid && dist > aboveSurface) {
+            this.storedTarget = respoint.add(this.orderTarget.diff(respoint).normalize(aboveSurface));
+        }
+
+        return asteroid
     }
 }
 
@@ -111,7 +136,7 @@ export class AstronautThrowFlare extends AstronautOrder {
                 if (inRange) {
                     this.execute();
                 } else {
-                    this.queueAfterMove(500);
+                    this.executeAfterMove(500);
                 }
             }
         });
@@ -128,8 +153,8 @@ export class AstronautThrowFlare extends AstronautOrder {
     }
 
     execute(): void {
-        const flare = new this.flare();
-        flare.position = this.orderTarget.clone();
+        const flare = new this.flare(this.astronaut.position);
+        flare.toss(this.orderTarget.clone());
         this.astronaut.spendItem(this.item);
         this.destroy();
     }
@@ -142,6 +167,97 @@ export class AstronautThrowFlare extends AstronautOrder {
     }
 }
 
+export class AstronautGrabFlare extends AstronautOrder {
+    flare?: FlareCore;
+
+    constructor(astronaut: Astronaut) {
+        super(astronaut);
+        this.astronaut = astronaut;
+        astronaut.cancelOrders();
+    }
+
+    override plan() {
+        game.controls.requestMouse(MousePriority.selectOrderTarget, () => {
+
+            if (game.hovered instanceof FlareCore) {
+                this.flare = game.hovered;
+            } else {
+                return false;
+            }
+
+            let inRange = this.astronaut.position.distance(this.flare) < 100;
+
+            if (game.controls.clicked) {
+                if (inRange) {
+                    this.execute();
+                } else {
+                    this.executeAfterMove(100);
+                }
+            }
+        });
+    }
+
+
+    execute(): void {
+        this.astronaut.grabbedFlare = this.flare;
+        this.flare!.grabbedBy = this.astronaut;
+        this.destroy();
+    }
+}
+
+
+
+
+export class AstronautTossGrabbedFlare extends AstronautOrder {
+    sprite: Sprite;
+
+    constructor(astronaut: Astronaut) {
+        super(astronaut);
+        this.astronaut = astronaut;
+        const texture = asset("circle");
+        this.sprite = new Sprite(texture);
+        this.sprite.anchor.set(0.5);
+        this.sprite.scale.set(this.astronaut.grabbedFlare!.range / texture.width * 2);
+        game.containers.overlay.addChild(this.sprite);
+        astronaut.cancelOrders();
+    }
+
+    override plan() {
+        game.controls.requestMouse(MousePriority.order, () => {
+            let inRange = this.orderTarget.distanceSquared(this.astronaut) < 500 ** 2;
+            if (game.controls.clicked) {
+                if (inRange) {
+                    this.execute();
+                } else {
+                    this.executeAfterMove(500);
+                }
+            }
+        });
+    }
+
+    override show(): void {
+        this.sprite.position.set(...this.orderTarget.xy())
+        let inRange = this.orderTarget.distanceSquared(this.astronaut) < 500 ** 2;
+        if (inRange) {
+            this.sprite.tint = 0x55ff55;
+        } else {
+            this.sprite.tint = 0xffff55;
+        }
+    }
+
+    execute(): void {
+        this.astronaut.grabbedFlare!.toss(this.orderTarget.clone());
+        this.astronaut.grabbedFlare = undefined;
+        this.destroy();
+    }
+
+
+
+    override destroy(): void {
+        super.destroy();
+        this.sprite.destroy();
+    }
+}
 
 export class AstronautMove extends AstronautOrder {
     sprite: Sprite;
@@ -235,18 +351,16 @@ export class AstronautPlaceInstallation extends AstronautOrder {
 
     override plan() {
         game.controls.requestMouse(MousePriority.order, () => {
-            this.asteroid = Array.from(game.objects.getAll("asteroid")).reduce(toNearest(this.orderTarget));
-            let asteroidDist = this.orderTarget.distance(this.asteroid);
-            this.asteroid = this.asteroid;
-            let astInRange = asteroidDist < 800;
+
+            this.asteroid = this.getNearestAsteroid(500, 300);
+
             let inRange = this.orderTarget.distance(this.astronaut) < 200;
 
-
-            if (astInRange && game.controls.clicked && this.astronaut.itemCount(this.item) > 0) {
+            if (this.asteroid && game.controls.clicked && this.astronaut.itemCount(this.item) > 0) {
                 if (inRange) {
                     this.execute();
                 } else {
-                    this.queueAfterMove(200);
+                    this.executeAfterMove(200);
                 }
             }
         });
@@ -261,25 +375,21 @@ export class AstronautPlaceInstallation extends AstronautOrder {
         if (this.asteroid) {
 
             let asteroidDist = this.orderTarget.distance(this.asteroid);
-            let astInRange = asteroidDist < 800;
 
-            if (astInRange) {
-                this.girder.position.set(...this.orderTarget.xy());
-                this.girder.rotation = this.asteroid.position.diff(this.orderTarget).toAngle() + Math.PI / 2;
-                this.girder.height = asteroidDist;
-                this.girder.visible = true;
+            this.girder.position.set(...this.orderTarget.xy());
+            this.girder.rotation = this.asteroid.position.diff(this.orderTarget).toAngle() + Math.PI / 2;
+            this.girder.height = asteroidDist;
+            this.girder.visible = true;
 
-                if (inRange) {
-                    this.sprite.tint = 0x55ff55;
-                    this.girder.tint = 0x55ff55;
-                } else {
-                    this.sprite.tint = 0xffff55;
-                    this.girder.tint = 0xffff55;
-                }
+            if (inRange) {
+                this.sprite.tint = 0x55ff55;
+                this.girder.tint = 0x55ff55;
             } else {
-                this.girder.visible = false;
+                this.sprite.tint = 0xffff55;
+                this.girder.tint = 0xffff55;
             }
-
+        } else {
+            this.girder.visible = false;
         }
     }
 
@@ -325,27 +435,14 @@ export class AstronautPlaceDrill extends AstronautOrder {
 
     override plan() {
         game.controls.requestMouse(MousePriority.order, () => {
-            let asteroids = Array.from(game.objects.getAll("asteroid"));
-            this.asteroid = undefined;
-            let dist = 150;
-            for (const ast of asteroids) {
-                if (!ast.canBuildDrill) continue;
-                let res = game.system.raycast(this.orderTarget, ast, (body) => body == ast.collider);
-                if (!res) continue
-                let useDist = Vector.fromLike(res.point).distance(this.orderTarget);
-                if (useDist < dist && useDist > 50) {
-                    this.asteroid = ast;
-                    dist = useDist;
-                }
-            }
-
+            this.asteroid = this.getNearestAsteroid(500, 150);
             let inRange = this.orderTarget.distance(this.astronaut) < 200;
 
             if (this.asteroid && game.controls.clicked && this.astronaut.itemCount(this.item) > 0) {
                 if (inRange) {
                     this.execute();
                 } else {
-                    this.queueAfterMove(200);
+                    this.executeAfterMove(200);
                 }
             }
         });
