@@ -79,7 +79,7 @@ export class Spotlight extends CoreObject implements ISelectable {
                 this.repeller.strength -= s.power * 0.1 * game.dt * (1 - proximity) * this.repeller.strength;
             }
 
-            s.affect(-power * game.dt * 60, this);
+            s.affect(-power, this);
         };
         this.light = new Light({ position: this.position, intensity: 0.7,color:new CustomColor(255,10,5) });
     }

@@ -130,7 +130,7 @@ export class Game {
 
         //TODO this is only temp
         let sprite = new Sprite(Lightmap.texture);
-        this.app.stage.addChild(sprite);
+        this.containers.backdrop.addChild(sprite);
         sprite.filters = [new BlurFilter({})];
 
     }
