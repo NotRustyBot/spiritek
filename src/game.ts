@@ -124,6 +124,8 @@ export class Game {
         const astro2 = new Astronaut();
         const astro3 = new Astronaut();
         const astro4 = new Astronaut();
+        astro3.position.set(0, 1500);
+        astro3.targetPosition.set(2000, 1500);
 
         this.uiManager = new UiManager();
         this.orderManager = new OrderManager();

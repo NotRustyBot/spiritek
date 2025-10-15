@@ -128,7 +128,7 @@ export class RepellFlare extends FlareCore {
 
     override hit(spirit: Spirit) {
         if (this.clocky.stop) this.strength -= 0.05;
-        if (this.strength < 0.05) this.destroy();
+        if (this.strength < 0.05 && this.clocky.stop) this.destroy();
     }
 
 }
@@ -139,9 +139,9 @@ export class KillFlare extends FlareCore {
     override get range() { return 300 };
 
     override hit(spirit: Spirit) {
-        this.strength -= 0.1;
-        if (this.clocky.stop) spirit.power -= 0.2;
-        if (this.strength < 0.05) this.destroy();
+        if (this.clocky.stop) this.strength -= 0.1;
+        spirit.power -= 0.2;
+        if (this.strength < 0.05 && this.clocky.stop) this.destroy();
     }
 }
 

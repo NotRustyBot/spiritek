@@ -42,14 +42,16 @@ export class Installation extends CoreObject {
 
         this.attractor.hit = (spirit: Spirit) => {
             if (spirit.position.distanceSquared(this) < 100 ** 2) {
-                this.resist -= game.dt * 5;
-                this.underAttack = true;
+                if(this.resist > 0){
+                    this.resist -= game.dt * 5;
+                    this.underAttack = true;
+                }
             }
         }
     }
 
     update() {
-        this.attractor.range = 800 * (this.resist / 100);
+        this.attractor.range = 800 * (this.resist / 100)
         this.attractor.position.set(this);
     };
 
@@ -61,7 +63,7 @@ export class TurretInstallation extends Installation {
     override update(): void {
         super.update();
         this.turret.confused = this.resist < 90;
-        if (this.resist < 100 && !this.underAttack && this.resist > 90) {
+        if (this.resist < 100 && !this.underAttack && this.resist) {
             this.resist += 10 * game.dt;
         }
 
@@ -77,7 +79,7 @@ export class SpotlightInstallation extends Installation {
     override update(): void {
         super.update();
         this.spotlight.confused = this.resist < 90;
-        if (this.resist < 100 && !this.underAttack && this.resist > 90) {
+        if (this.resist < 100 && !this.underAttack) {
             this.resist += 10 * game.dt;
         }
 

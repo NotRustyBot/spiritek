@@ -134,6 +134,24 @@ export class Vector {
         return this;
     }
 
+    minLength(length: number = 1) {
+        length = length ?? 1;
+        const total = this.length();
+        if (total === 0 || total > length) return this;
+        this.x = (this.x / total) * length;
+        this.y = (this.y / total) * length;
+        return this;
+    }
+
+    maxLength(length: number = 1) {
+        length = length ?? 1;
+        const total = this.length();
+        if (total === 0 || total < length) return this;
+        this.x = (this.x / total) * length;
+        this.y = (this.y / total) * length;
+        return this;
+    }
+
     clampAxis(value: number): Vector {
         this.x = Math.max(-value, Math.min(value, this.x));
         this.y = Math.max(-value, Math.min(value, this.y));
