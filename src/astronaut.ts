@@ -1,6 +1,6 @@
 import { Sprite, spritesheetAsset } from "pixi.js";
 import { CoreObject } from "./core";
-import { asset } from "./util";
+import { asset, toNearest } from "./util";
 import { Vector } from "./vector";
 import { game } from "./game";
 import { ISelectable } from "./types";
@@ -225,6 +225,28 @@ export class Astronaut extends CoreObject implements ISelectable {
 
     size = 50;
 
+
+    avoid(vector: Vector) {
+        const avoidanceRequired = game.system.raycast(this.position, this.targetPosition);
+        if(!avoidanceRequired) return;
+        const asteroid = Array.from(game.objects.getAll("asteroid")).reduce(toNearest(this));
+        const res = game.system.raycast(this.position, asteroid);
+
+        if (res) {
+            let dist = Vector.fromLike(res.point).distance(this.position);
+            if (dist > 125) return;
+            dist = Math.min(dist, 100);
+            const radi = this.position.diff(asteroid);
+            const radius = radi.length() + 100 - dist;
+            const prefferedResult = this.position.clone().add(vector.normalize(this.speed * game.dt)).sub(asteroid).minLength(radius).add(asteroid);
+            game.debugGraphics.circle(prefferedResult.x, prefferedResult.y, 5);
+            game.debugGraphics.fill(0xffaa00);
+            const fdif = prefferedResult.diff(this)
+            vector.set(fdif);
+        }
+
+    }
+
     update() {
         if (this.incapacitated) return;
         const dsq = this.position.distanceSquared(this.targetPosition);
@@ -233,7 +255,9 @@ export class Astronaut extends CoreObject implements ISelectable {
             if (dsq < this.speed * game.dt) {
                 this.position.set(this.targetPosition);
             } else {
+
                 const diff = this.targetPosition.diff(this);
+                this.avoid(diff);
                 this.position.add(diff.normalize(this.speed * game.dt));
                 this.rotation = diff.toAngle();
                 this.moving = true;
