@@ -246,7 +246,9 @@ export class AstronautTossGrabbedFlare extends AstronautOrder {
     }
 
     execute(): void {
-        this.astronaut.grabbedFlare!.toss(this.orderTarget.clone());
+        if(this.astronaut.grabbedFlare){
+            this.astronaut.grabbedFlare!.toss(this.orderTarget.clone());
+        }
         this.astronaut.grabbedFlare = undefined;
         this.destroy();
     }

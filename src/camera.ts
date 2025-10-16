@@ -49,6 +49,10 @@ export class Camera extends CoreObject {
 
         game.containers.world.x = (-this.x * this.zoom + window.innerWidth / 2);
         game.containers.world.y = (-this.y * this.zoom + window.innerHeight / 2);
+
+        game.containers.underworld.x = (-this.x * this.zoom + window.innerWidth / 2);
+        game.containers.underworld.y = (-this.y * this.zoom + window.innerHeight / 2);
+        game.containers.underworld.scale.set(this.zoom);
     }
 
     worldToRender(position: Vector) {

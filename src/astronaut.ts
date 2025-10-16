@@ -239,12 +239,9 @@ export class Astronaut extends CoreObject implements ISelectable {
             const radi = this.position.diff(asteroid);
             const radius = radi.length() + 100 - dist;
             const prefferedResult = this.position.clone().add(vector.normalize(this.speed * game.dt)).sub(asteroid).minLength(radius).add(asteroid);
-            game.debugGraphics.circle(prefferedResult.x, prefferedResult.y, 5);
-            game.debugGraphics.fill(0xffaa00);
             const fdif = prefferedResult.diff(this)
             vector.set(fdif);
         }
-
     }
 
     update() {

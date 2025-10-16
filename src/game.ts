@@ -39,6 +39,8 @@ export class Game {
 
     containers = {
         backdrop: new Container(),
+        underworld: new Container(),
+        screenLight: new Container(),
         world: new Container(),
         darkness: new Container(),
         girder: new Container(),
@@ -89,8 +91,10 @@ export class Game {
         this.system = new System();
         this.ship = new Ship();
         this.app.stage.addChild(this.containers.backdrop);
+        this.app.stage.addChild(this.containers.underworld);
+        this.app.stage.addChild(this.containers.screenLight);
         this.app.stage.addChild(this.containers.world);
-        this.containers.world.addChild(this.containers.darkness);
+        this.containers.underworld.addChild(this.containers.darkness);
         this.containers.world.addChild(this.containers.girder);
         this.containers.world.addChild(this.containers.ritual);
         this.containers.world.addChild(this.containers.stone);
@@ -111,7 +115,14 @@ export class Game {
         new WaveManager();
 
         for (const obj of scene) {
-            const stone = new Asteroid(obj.kind ?? "stone_1" as any, obj.rotation, obj.x, obj.y);
+            if(obj.type == "asteroid"){
+                const stone = new Asteroid(obj.kind ?? "stone_1" as any, obj.rotation, obj.x, obj.y);
+            }else if(obj.type == "ship"){
+                this.ship.position.set(obj);
+                this.ship.rotation = obj.rotation ?? 0;
+                this.ship.targetPosition.set(obj);
+                this.ship.targetRotation = obj.rotation ?? 0;
+            }
         }
 
         for (let index = 0; index < 100; index++) {
@@ -132,7 +143,7 @@ export class Game {
 
         //TODO this is only temp
         let sprite = new Sprite(Lightmap.texture);
-        this.containers.backdrop.addChild(sprite);
+        this.containers.screenLight.addChild(sprite);
         sprite.filters = [new BlurFilter({})];
 
     }
@@ -228,7 +239,7 @@ export class Game {
         }
 
         for (const obj of [...this.objects.getAll("debug")]) {
-            obj.debug(this.debugGraphics);
+            //obj.debug(this.debugGraphics);
         }
 
     }
