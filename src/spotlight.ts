@@ -7,12 +7,13 @@ import { Spirit } from "./spirit";
 import { ISelectable } from "./types";
 import { asset, angleInterpolate, rotate } from "./util";
 import { Vectorlike, Vector } from "./vector";
-import { ISelectableBase } from "./select";
+import { Common } from "./common";
 import { MousePriority } from "./input";
 import { SpotlightTarget } from "./orderManager";
 import { ObjectOptionsData } from "./ui/objectOptions";
 import { Light } from "./lighting/light";
 import { CustomColor } from "./lighting/color";
+import { IPickupable } from "./droppedItem";
 
 
 export class Spotlight extends CoreObject implements ISelectable {
@@ -35,6 +36,7 @@ export class Spotlight extends CoreObject implements ISelectable {
         }
     }
     light: Light;
+    pickupProxy?: IPickupable;
 
     constructor() {
         super("updatable", "drawable", "selectable");
@@ -81,7 +83,7 @@ export class Spotlight extends CoreObject implements ISelectable {
 
             s.affect(-power, this);
         };
-        this.light = new Light({ position: this.position, intensity: 0.7,color:new CustomColor(255,10,5) });
+        this.light = new Light({ position: this.position, intensity: 0.7, color: new CustomColor(255, 10, 5) });
     }
 
     select(): void {
@@ -89,11 +91,11 @@ export class Spotlight extends CoreObject implements ISelectable {
     }
 
     hover() {
-        ISelectableBase.hover(this, this.sprite);
+        Common.hover(this, this.sprite);
     }
 
     unhover() {
-        ISelectableBase.unhover(this, this.sprite);
+        Common.unhover(this, this.sprite);
     }
 
     update() {
@@ -133,11 +135,19 @@ export class Spotlight extends CoreObject implements ISelectable {
         this.sprite.position.set(this.repeller.x, this.repeller.y);
         if (this.blinker.check()) {
             this.lightSprite.alpha = 0.2 * (1 + (1 - this.repeller.strength) * Math.random()) * this.repeller.strength;
-            this.light.intensity = this.lightSprite.alpha*3;
+            this.light.intensity = this.lightSprite.alpha * 3;
             this.lightSprite.alpha = 0;
 
         }
         this.lightSprite.rotation = this.aimAngle;
         this.sprite.rotation = this.aimAngle;
+    }
+
+    override destroy(): void {
+        super.destroy();
+        this.repeller.destroy();
+        this.lightSprite.destroy();
+        this.sprite.destroy();
+        this.light.remove();
     }
 }

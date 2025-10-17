@@ -19,6 +19,7 @@ export type ObjectOptionsData = {
         item: ItemType
         count: number
         action: () => void
+        drop: () => void
     }>
 }
 
@@ -71,24 +72,27 @@ export function ObjectOptions(data?: ObjectOptionsData) {
 
     if (data.items) {
         sections.push(
-            <div class="item-container">
+            <div class="items-container">
                 {
                     data.items.map((d) => {
                         let ref: HTMLDivElement;
                         let def = itemDefinition[d.item];
-                        return <div class="item-action"
-                            ref={(e: HTMLDivElement) => { ref = e }}
-                            onClick={() => {
-                                d.action();
-                            }}
-                        >
-                            <img src={def.icon} />
-                            <span class="item-name">{def.name}</span>
-                            <span class="item-count">{" x" + d.count}</span>
+                        return <div class="item-container">
+                            <div class="item-action"
+                                ref={(e: HTMLDivElement) => { ref = e }}
+                                onClick={() => {
+                                    d.action();
+                                }}
+                            >
+                                <img src={"img/" + def.icon + ".png"} />
+                                <span class="item-name">{def.name}</span>
+                                <span class="item-count">{" x" + d.count}</span>
+                            </div>
+                            <span class="item-drop" onClick={() => { d.drop() }}>drop</span>
                         </div>
                     })
                 }
-            </div>
+            </div >
         );
     }
     return <div id="object-options">

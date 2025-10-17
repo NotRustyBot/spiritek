@@ -15,6 +15,19 @@ export class Clocky {
     repeat = Infinity;
     stop = false;
     followUp?: Array<ClockyData>;
+    tickedOnTime = -1;
+
+    autoTick(v: boolean = true) {
+        if (v) {
+            game.objects.add("updatable", this);
+        } else {
+            game.objects.remove("updatable", this);
+        }
+    }
+
+    update() {
+        this.check();
+    }
 
     get progress() {
         return this.time / this.limit;
@@ -57,7 +70,8 @@ export class Clocky {
     check() {
         if (this.stop) return false;
         this.during?.();
-        this.time += game.dt;
+        if (this.tickedOnTime != game.time) this.time += game.dt;
+        this.tickedOnTime = game.time;
         if (this.time > this.limit) {
             this.time -= this.limit;
             if (--this.repeat <= 0) this.stop = true;

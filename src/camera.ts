@@ -1,3 +1,4 @@
+import { Rectangle } from "pixi.js";
 import { CoreObject } from "./core";
 import { game } from "./game";
 import { Vector } from "./vector";
@@ -24,6 +25,10 @@ export class Camera extends CoreObject {
 
     get aspectRatio() {
         return this.width / this.height;
+    }
+
+    get worldRect(): Rectangle {
+        return new Rectangle(this.x - this.center.x, this.y - this.center.y, this.width, this.height);
     }
 
     constructor() {

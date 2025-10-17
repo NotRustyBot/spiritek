@@ -25,9 +25,13 @@ export class CoreObject {
 
     constructor(...tags: ObjectKind[]) {
         for (const tag of tags) {
-            game.objects.add(tag, this as any);
-            this.tags.add(tag);
+            this.addTag(tag);
         }
+    }
+
+    addTag(tag: ObjectKind) {
+        game.objects.add(tag, this as any);
+        this.tags.add(tag);
     }
 
     destroy() {

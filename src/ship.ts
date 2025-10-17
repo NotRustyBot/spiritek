@@ -15,10 +15,14 @@ import { Turret } from "./turret";
 import { SpotlightInstallation, TurretInstallation } from "./installation";
 import { MousePriority } from "./input";
 import { ISelectable } from "./types";
-import { ISelectableBase } from "./select";
+import { Common } from "./common";
 import { TestRitual } from "./ritual";
 import { ObjectOptionsData } from "./ui/objectOptions";
-import { TranslateTo, RotateTo, MoveTo } from "./orderManager";
+import { TranslateTo, RotateTo, MoveTo, ShipPickupItem } from "./orderManager";
+import { AttentionIcon } from "./attention";
+import { Inventory, itemDefinition, ItemType } from "./items";
+import { DroppedItem } from "./droppedItem";
+import { Astronaut } from "./astronaut";
 
 export class Ship extends CoreObject implements ISelectable {
     repeller: PolygonRepeller;
@@ -30,12 +34,71 @@ export class Ship extends CoreObject implements ISelectable {
     spotlightR: ShipFloodlight;
     turret: ShipTurret;
 
+    attention: AttentionIcon;
+
+    astronauts = 3;
+
     resist = 1000;
     ui = {
         setResist: (value: string) => { }
     }
 
     get uiData(): ObjectOptionsData {
+        const actions: ObjectOptionsData["actions"] = new Array();
+        actions.push({
+            name: "Move",
+            icon: "img/ship.png",
+            active: () => (game.orderManager.currentOrder instanceof MoveTo),
+            action: () => {
+                const order = new MoveTo();
+                game.orderManager.newOrder(order);
+            }
+        });
+
+        actions.push({
+            name: "Translate",
+            icon: "img/ship.png",
+            active: () => (game.orderManager.currentOrder instanceof TranslateTo),
+            action: () => {
+                const order = new TranslateTo();
+                game.orderManager.newOrder(order);
+            }
+        });
+
+        actions.push({
+            name: "Rotate",
+            icon: "img/ship.png",
+            active: () => (game.orderManager.currentOrder instanceof RotateTo),
+            action: () => {
+                const order = new RotateTo();
+                game.orderManager.newOrder(order);
+            }
+        })
+
+        actions.push({
+            name: "Pick Up",
+            icon: "img/stone_1.png",
+            active: () => (game.orderManager.currentOrder instanceof ShipPickupItem),
+            action: () => {
+                const order = new ShipPickupItem();
+                game.orderManager.newOrder(order);
+            },
+        });
+
+        if (this.astronauts > 0) {
+            actions.push({
+                name: "Deploy Astronaut",
+                icon: "img/astronaut.png",
+                action: () => {
+                    const astronaut = new Astronaut();
+                    astronaut.position.set(this).add(Vector.fromAngle(this.rotation).mult(this.size + 50));
+                    astronaut.targetPosition.set(astronaut.position);
+                    this.astronauts--;
+                    game.uiManager.updateObjectOptions(game.selected?.uiData);
+                },
+            });
+        }
+
         return {
             name: "Spiritek",
             stats: [
@@ -46,35 +109,17 @@ export class Ship extends CoreObject implements ISelectable {
                     }
                 }
             ],
-            actions: [
-                {
-                    name: "Move",
-                    icon: "img/ship.png",
-                    active: () => (game.orderManager.currentOrder instanceof MoveTo),
+            actions,
+            items: this.items.map((i) => {
+                return {
+                    ...i,
+                    drop: () => {
+                        this.dropItem(i.item)
+                    },
                     action: () => {
-                        const order = new MoveTo();
-                        game.orderManager.newOrder(order);
-                    }
-                },
-                {
-                    name: "Translate",
-                    icon: "img/ship.png",
-                    active: () => (game.orderManager.currentOrder instanceof TranslateTo),
-                    action: () => {
-                        const order = new TranslateTo();
-                        game.orderManager.newOrder(order);
-                    }
-                },
-                {
-                    name: "Rotate",
-                    icon: "img/ship.png",
-                    active: () => (game.orderManager.currentOrder instanceof RotateTo),
-                    action: () => {
-                        const order = new RotateTo();
-                        game.orderManager.newOrder(order);
                     }
                 }
-            ]
+            })
         }
     }
 
@@ -93,11 +138,21 @@ export class Ship extends CoreObject implements ISelectable {
     targetRotation = -1;
     targetPosition = new Vector();
 
+    items: Inventory = [
+        { item: ItemType.ConstructionParts, count: 3 },
+        { item: ItemType.DrillParts, count: 2 },
+        { item: ItemType.KillFlare, count: 2 },
+        { item: ItemType.RepellFlare, count: 4 },
+    ];
+
     constructor() {
-        super("updatable", "selectable");
+        super("updatable", "selectable", "drawable");
         this.sprite = new Sprite(asset("ship"));
         game.containers.ship.addChild(this.sprite);
         this.sprite.anchor.set(0.5);
+
+        this.attention = new AttentionIcon();
+        this.attention.setIcon("icon-Icon_Warning");
 
         this.overlaySprite = new Sprite(asset("ship"));
         game.containers.overlay.addChild(this.overlaySprite);
@@ -127,6 +182,60 @@ export class Ship extends CoreObject implements ISelectable {
         this.rotation = -1;
     }
 
+
+    board(astronaut: Astronaut) {
+        this.astronauts++;
+        for (const item of astronaut.items) {
+            this.pickup(item);
+        }
+        astronaut.destroy();
+    }
+
+
+    dropDir = 0;
+    dropItem(item: ItemType) {
+        if (this.itemCount(item) > 0) {
+            const drop = new DroppedItem(item);
+            this.spendItem(item);
+            drop.position.set(this).add(Vector.fromAngle(this.rotation - 0.1 + Math.sin(this.dropDir++) * 0.2).mult(this.size + 50));
+            game.uiManager.updateObjectOptions(this.uiData);
+        }
+    }
+
+
+
+    itemCount(item: ItemType) {
+        return this.items.filter(i => i.item == item).reduce<number>((a, b) => a + b.count, 0);
+    }
+
+    spendItem(item: ItemType) {
+        return Common.spendItem(item, this.items);
+
+    }
+
+    inventorySize = 12;
+
+    pickup(data: { item: ItemType, count: number }): number {
+
+        const { item, count } = { ...data };
+        let countLeft = count;
+        for (let index = 0; index < this.inventorySize; index++) {
+            if (index >= this.items.length) {
+                this.items[index] = { item, count: 0 };
+            }
+
+            const slot = this.items[index];
+
+            if (slot.item == item) {
+                slot.count += countLeft;
+                countLeft = 0;
+                break;
+            }
+        }
+
+        return countLeft;
+    }
+
     size = 500;
 
     select(): void {
@@ -135,11 +244,11 @@ export class Ship extends CoreObject implements ISelectable {
     }
 
     hover(): void {
-        ISelectableBase.hover(this, this.sprite);
+        Common.hover(this, this.sprite);
     }
 
     unhover(): void {
-        ISelectableBase.unhover(this, this.sprite);
+        Common.unhover(this, this.sprite);
     }
 
     hoverCheck(): boolean {
@@ -149,13 +258,8 @@ export class Ship extends CoreObject implements ISelectable {
     clocky = new Clocky(1);
 
     update() {
-        this.repeller.position.set(this);
-        this.attractor.position.set(this);
-        this.sprite.position.set(this.x, this.y);
-        this.sprite.rotation = this.rotation;
 
-        this.overlaySprite.position.set(this.targetPosition.x, this.targetPosition.y);
-        this.overlaySprite.rotation = this.targetRotation;
+
 
         const rotSpeed = 0.3;
         if (this.rotation != this.targetRotation) {
@@ -166,7 +270,7 @@ export class Ship extends CoreObject implements ISelectable {
         if (dsq > 1) {
             const diff = this.targetPosition.diff(this);
             const align = Math.abs(angleDistance(diff.toAngle(), this.rotation)) < 1 ? 1 : 0.3;
-            const speed = 100 * game.dt * align;
+            const speed = 200 * game.dt * align;
             if (dsq < speed) {
                 this.position.set(this.targetPosition);
             } else {
@@ -177,11 +281,23 @@ export class Ship extends CoreObject implements ISelectable {
             this.overlaySprite.visible = false;
         }
 
+        this.repeller.position.set(this);
+        this.attractor.position.set(this);
+
         this.ui.setResist(this.resist.toFixed(0));
 
         this.spotlightL.update();
         this.spotlightR.update();
         this.turret.update();
+    }
+
+    draw() {
+        this.sprite.position.set(this.x, this.y);
+        this.sprite.rotation = this.rotation;
+        this.attention.forPosition(this, this.size);
+
+        this.overlaySprite.position.set(this.targetPosition.x, this.targetPosition.y);
+        this.overlaySprite.rotation = this.targetRotation;
     }
 }
 

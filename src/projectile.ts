@@ -13,7 +13,7 @@ export class Projectile extends CoreObject {
 
     sprite: Sprite;
 
-    constructor(position: Vectorlike, target: Spirit) {
+    constructor(position: Vectorlike, target: Spirit | undefined, fallbackAngle: number) {
         super("updatable");
         this.position.set(position);
         this.sprite = new Sprite(asset("projectile"));
@@ -21,11 +21,13 @@ export class Projectile extends CoreObject {
         game.containers.projectile.addChild(this.sprite);
         this.life = this.maxLife;
 
-        let dist = this.position.distance(target);
 
 
         if (target) {
+            let dist = this.position.distance(target);
             this.velocity = target.position.clone().add(target.velocity.clone().mult(dist / 4)).diff(this).normalize(4);
+        } else {
+            this.velocity = Vector.fromAngle(fallbackAngle).mult(4);
         }
 
         this.sprite.rotation = this.velocity.toAngle();
@@ -42,7 +44,7 @@ export class Projectile extends CoreObject {
         for (const spirit of spirits) {
             if (spirit.position.distanceSquared(this) < 100 ** 2) {
                 this.destroy();
-                spirit.projectileHit(1);
+                spirit.projectileHit(0.34);
                 spirit.velocity.add(this.position.diff(spirit).normalize(-2));
             }
         }

@@ -7,7 +7,7 @@ import { game } from "./game";
 import { Spirit } from "./spirit";
 import { ISelectable } from "./types";
 import { OutlineFilter } from "pixi-filters";
-import { ISelectableBase } from "./select";
+import { Common } from "./common";
 import { Light } from "./lighting/light";
 import { Vector, Vectorlike } from "./vector";
 import { CustomColor } from "./lighting/color";
@@ -72,11 +72,11 @@ export class FlareCore extends CoreObject implements ISelectable {
     size = 50;
 
     hover() {
-        ISelectableBase.hover(this, this.sprite);
+        Common.hover(this, this.sprite);
     }
 
     unhover() {
-        ISelectableBase.unhover(this, this.sprite);
+        Common.unhover(this, this.sprite);
     }
 
     hit(power: Spirit) { }

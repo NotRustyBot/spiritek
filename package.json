@@ -19,6 +19,7 @@
     "hyphenate-style-name": "^1.1.0",
     "pixi-filters": "^6.1.4",
     "pixi.js": "^8.13.2",
-    "point-in-polygon": "^1.1.0"
+    "point-in-polygon": "^1.1.0",
+    "random": "^5.4.1"
   }
 }

@@ -17,13 +17,13 @@ body {
     top: 0;
     left: 0;
     pointer-events: none;
+    color: white;
 }
 
 #object-options {
     background-color: #111;
     padding: 10px;
     width: 325px;
-    color: white;
     display: flex;
     flex-direction: column;
     gap: 5px;
@@ -67,13 +67,7 @@ body {
 }
 
 .item-action {
-    position: relative;
     pointer-events: all;
-    display: flex;
-    flex-direction: column;
-    width: 100px;
-    border: 1px solid black;
-    padding: 2px;
 }
 
 .item-name {
@@ -86,7 +80,7 @@ body {
     top: 60px;
     right: 0;
     color: #555;
-    
+
 }
 
 .item-action img {
@@ -96,7 +90,105 @@ body {
 
 
 .item-container {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    width: 100px;
+    border: 1px solid black;
+    justify-content: space-between;
+}
+
+.items-container {
     display: flex;
     flex-wrap: wrap;
     gap: 2px;
+}
+
+.item-drop {
+    background-color: #330000;
+    width: max-content;
+    padding: 2px;
+    pointer-events: all;
+
+
+}
+
+.item-drop:hover {
+    background-color: #995555;
+}
+
+.removal {
+    transition: opacity 500ms;
+    opacity: 0;
+}
+
+#log-list {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: end;
+    gap: 10px;
+    margin: 10px;
+}
+
+.log-item {
+    padding: 10px 20px;
+    background-color: #222;
+    max-width: 500px;
+    width: max-content;
+    pointer-events: all;
+    position: relative;
+}
+
+.log-item.clickable {
+    cursor: pointer;
+}
+
+.log-icon {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 32px;
+    height: 32px;
+    transform: translate(-50%, -50%);
+}
+
+.log-close {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 18px;
+    height: 18px;
+    background: #000;
+}
+
+.log-clickable {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 16px;
+    height: 16px;
+}
+
+.log-item.critical {
+    background-color: #f22;
+}
+
+
+.log-item.warn {
+    background-color: #aa0;
+}
+
+.log-item.objective {
+    background-color: #595;
+}
+
+.log-item.critical .log-icon {
+    filter: sepia(100%) saturate(1000%) brightness(70%) hue-rotate(305deg)
+}
+
+.completed {
+    color: #9f9;
 }

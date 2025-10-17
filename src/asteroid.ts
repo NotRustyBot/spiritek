@@ -3,7 +3,7 @@ import { PolygonRepeller } from "./repeller"
 
 import stone1 from "./hitbox/stone1.json"
 import stone2 from "./hitbox/stone2.json"
-import { Renderer, RenderTexture, Sprite } from "pixi.js";
+import { Renderer, RenderTexture, sortMixin, Sprite } from "pixi.js";
 import { asset, rotate } from "./util";
 import { game } from "./game";
 import { Polygon } from "check2d";
@@ -18,27 +18,39 @@ declare module "./types" { interface ObjectKinds { asteroid: Asteroid } }
 export class Asteroid extends CoreObject {
     repeller: PolygonRepeller;
     sprite: Sprite;
+    ore?: Sprite;
     collider: Polygon;
     drill?: Drill;
 
-    resource = 120;
+    resource = 0;
 
     get canBuildDrill() {
         return this.drill == undefined && this.resource > 0;
     }
 
-    constructor(stone: keyof typeof hitboxLookup, rotation = 0, x = 0, y = 0) {
+    constructor(stone: keyof typeof hitboxLookup, rotation = 0, x = 0, y = 0, resource = 0) {
         super("asteroid", "shadowCaster");
 
         this.sprite = new Sprite(asset(stone));
         this.sprite.anchor.set(0.5);
         this.sprite.rotation = rotation;
         game.containers.stone.addChild(this.sprite);
+
         this.repeller = new PolygonRepeller();
         const polygon = rotate(hitboxLookup[stone], rotation);
         this.repeller.setPolygon(polygon);
         this.collider = game.system.createPolygon(this.position, polygon);
+        this.resource = resource;
+
+        if (resource > 0) {
+            this.ore = new Sprite(asset("girder"));
+            this.ore.anchor.set(0.5);
+            this.ore.rotation = rotation;
+            game.containers.stone.addChild(this.ore);
+        }
+
         this.teleport(x, y);
+
 
     }
 
@@ -47,6 +59,7 @@ export class Asteroid extends CoreObject {
         this.y = y;
 
         this.sprite.position.set(x, y);
+        this.ore?.position.set(x, y);
         this.repeller.x = x;
         this.repeller.y = y;
         this.collider.setPosition(x, y);

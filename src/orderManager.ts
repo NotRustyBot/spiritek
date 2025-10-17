@@ -11,6 +11,8 @@ import { Spotlight } from "./spotlight";
 import { Drill } from "./drill";
 import { Asteroid } from "./asteroid";
 import { Vector } from "./vector";
+import { IPickupable } from "./droppedItem";
+import { Ship } from "./ship";
 
 export class OrderManager extends CoreObject {
     orders = new Set<Order>();
@@ -84,14 +86,14 @@ export class AstronautOrder extends Order {
         if (game.orderManager.currentOrder == this) game.orderManager.currentOrder = undefined;
     }
 
-    getNearestAsteroid(searchRange: number, aboveSurface: number) {
+    getNearestAsteroid(searchRange: number, aboveSurface: number, drillCheck = false) {
         let asteroids = Array.from(game.objects.getAll("asteroid"));
         let asteroid = undefined;
         this.storedTarget = undefined;
         let dist = searchRange;
         let respoint = new Vector();
         for (const ast of asteroids) {
-            if (!ast.canBuildDrill) continue;
+            if (!ast.canBuildDrill && drillCheck) continue;
             let res = game.system.raycast(this.orderTarget, ast, (body) => body == ast.collider);
             if (!res) continue
             let useDist = Vector.fromLike(res.point).distance(this.orderTarget);
@@ -205,6 +207,56 @@ export class AstronautGrabFlare extends AstronautOrder {
     }
 }
 
+export class AstronautCollectItem extends AstronautOrder {
+    target?: CoreObject & IPickupable;
+
+    constructor(astronaut: Astronaut) {
+        super(astronaut);
+        this.astronaut = astronaut;
+        astronaut.cancelOrders();
+    }
+
+    override plan() {
+        game.controls.requestMouse(MousePriority.selectOrderTarget, () => {
+
+            if (game.hovered && (game.hovered.tags.has("pickupable") || game.hovered.pickupProxy)) {
+                if (game.hovered.pickupProxy) {
+                    this.target = game.hovered.pickupProxy as unknown as IPickupable & CoreObject;
+                } else {
+                    this.target = game.hovered as unknown as IPickupable & CoreObject;
+                }
+            } else {
+                return false;
+            }
+
+            let inRange = this.astronaut.position.distance(this.target) < 50;
+
+            if (game.controls.clicked) {
+                if (inRange) {
+                    this.execute();
+                } else {
+                    this.executeAfterMove(50);
+                }
+                return true;
+            }
+
+            return false;
+        });
+    }
+
+
+    execute(): void {
+        if (this.target && game.objects.getAll("pickupable").has(this.target)) {
+            const left = this.astronaut.pickup(this.target.checkPickup());
+            if (left == 0) this.target.destroy();
+        } else {
+            game.log("Item no longer available", this.astronaut, "warn");
+        }
+        this.destroy();
+    }
+}
+
+
 
 
 
@@ -246,7 +298,7 @@ export class AstronautTossGrabbedFlare extends AstronautOrder {
     }
 
     execute(): void {
-        if(this.astronaut.grabbedFlare){
+        if (this.astronaut.grabbedFlare) {
             this.astronaut.grabbedFlare!.toss(this.orderTarget.clone());
         }
         this.astronaut.grabbedFlare = undefined;
@@ -288,6 +340,12 @@ export class AstronautMove extends AstronautOrder {
             if (game.controls.pointerDown) {
                 if (game.hovered instanceof Drill) {
                     this.drillToOperate = game.hovered;
+                    this.execute();
+                    return true;
+                }
+
+                if (game.hovered instanceof Ship) {
+                    this.astronaut.enterShipIntent = true;
                     this.execute();
                     return true;
                 }
@@ -416,7 +474,7 @@ export class AstronautPlaceDrill extends AstronautOrder {
     girder: TilingSprite;
     item: ItemType;
 
-    constructor(astronaut: Astronaut, item: ItemType = ItemType.ConstructionParts) {
+    constructor(astronaut: Astronaut, item: ItemType = ItemType.DrillParts) {
         super(astronaut);
         this.item = item;
         const texture = asset("drill");
@@ -437,7 +495,7 @@ export class AstronautPlaceDrill extends AstronautOrder {
 
     override plan() {
         game.controls.requestMouse(MousePriority.order, () => {
-            this.asteroid = this.getNearestAsteroid(500, 150);
+            this.asteroid = this.getNearestAsteroid(500, 150, true);
             let inRange = this.orderTarget.distance(this.astronaut) < 200;
 
             if (this.asteroid && game.controls.clicked && this.astronaut.itemCount(this.item) > 0) {
@@ -523,6 +581,70 @@ export class MoveTo extends Order {
     }
 }
 
+
+export class ShipPickupItem extends Order {
+    sprite: Sprite;
+
+    get range() {
+        return game.ship.size + 200
+    }
+
+    constructor() {
+        super();
+        const texture = asset("circle");
+        this.sprite = new Sprite(texture);
+        this.sprite.anchor.set(0.5);
+        this.sprite.scale.set(this.range / texture.width * 2);
+        game.containers.overlay.addChild(this.sprite);
+    }
+
+    target?: CoreObject & IPickupable;
+
+    override plan() {
+        game.controls.requestMouse(MousePriority.selectOrderTarget, () => {
+
+            if (game.hovered && (game.hovered.tags.has("pickupable") || game.hovered.pickupProxy)) {
+                if (game.hovered.pickupProxy) {
+                    this.target = game.hovered.pickupProxy as unknown as IPickupable & CoreObject;
+                } else {
+                    this.target = game.hovered as unknown as IPickupable & CoreObject;
+                }
+            } else {
+                return false;
+            }
+
+            let inRange = game.ship.position.distance(this.target) < this.range;
+
+            if (game.controls.clicked) {
+                if (!inRange) {
+                    game.log("Target not in range for pickup", this.target, "warn");
+                    this.destroy();
+                } else {
+                    this.execute();
+                }
+            }
+        });
+    }
+
+    show(): void {
+        this.sprite.position.set(game.ship.x, game.ship.y);
+    }
+
+
+    execute(): void {
+        if (this.target) {
+            const left = game.ship.pickup(this.target.checkPickup());
+            if (left == 0) this.target.destroy();
+        }
+        this.destroy();
+    }
+
+    destroy(): void {
+        super.destroy();
+        this.sprite.destroy();
+    }
+
+}
 
 export class SpotlightTarget extends Order {
     spotlight: Spotlight;

@@ -1,19 +1,21 @@
-import { Sprite, spritesheetAsset } from "pixi.js";
+import { shapeBuilders, Sprite, spritesheetAsset } from "pixi.js";
 import { CoreObject } from "./core";
 import { asset, toNearest } from "./util";
 import { Vector } from "./vector";
 import { game } from "./game";
 import { ISelectable } from "./types";
-import { ISelectableBase } from "./select";
+import { Common } from "./common";
 import { MousePriority } from "./input";
 import { RangeRepeller } from "./repeller";
 import { Spirit } from "./spirit";
 import { ObjectOptionsData } from "./ui/objectOptions";
-import { ItemType } from "./items";
-import { AstronautGrabFlare, AstronautMove, AstronautPlaceDrill, AstronautPlaceInstallation, AstronautThrowFlare, AstronautTossGrabbedFlare, Order, OrderManager } from "./orderManager";
+import { itemDefinition, ItemType } from "./items";
+import { AstronautCollectItem, AstronautGrabFlare, AstronautMove, AstronautPlaceDrill, AstronautPlaceInstallation, AstronautThrowFlare, AstronautTossGrabbedFlare, Order, OrderManager } from "./orderManager";
 import { FlareCore, KillFlare, RepellFlare } from "./flare";
 import { SpotlightInstallation, TurretInstallation } from "./installation";
 import { Drill } from "./drill";
+import { DroppedItem } from "./droppedItem";
+import { AttentionIcon } from "./attention";
 
 
 
@@ -26,12 +28,9 @@ export class Astronaut extends CoreObject implements ISelectable {
     operatedDrill?: Drill;
     grabbedFlare?: FlareCore;
     rotation = 0;
+    attention = new AttentionIcon();
 
-    items: Array<{ count: number, item: ItemType }> = [
-        { count: 1, item: ItemType.KillFlare },
-        { count: 1, item: ItemType.ConstructionParts },
-        { count: 2, item: ItemType.RepellFlare },
-    ]
+    items: Array<{ count: number, item: ItemType }> = []
 
     ui = {
         setResistValue: (e: string) => { }
@@ -82,7 +81,7 @@ export class Astronaut extends CoreObject implements ISelectable {
             }
 
 
-            if (this.itemCount(ItemType.ConstructionParts) > 0) {
+            if (this.itemCount(ItemType.DrillParts) > 0) {
                 actions.push({
                     name: "Build Drill",
                     icon: "img/drill.png",
@@ -114,6 +113,16 @@ export class Astronaut extends CoreObject implements ISelectable {
                     },
                 })
             }
+
+            actions.push({
+                name: "Pick Up",
+                icon: "img/stone_1.png",
+                active: () => (game.orderManager.currentOrder instanceof AstronautCollectItem),
+                action: () => {
+                    const order = new AstronautCollectItem(this);
+                    game.orderManager.newOrder(order);
+                },
+            })
         }
 
 
@@ -123,8 +132,12 @@ export class Astronaut extends CoreObject implements ISelectable {
             stats: stats,
             items: this.items.map((i) => {
                 return {
-                    ...i, action: () => {
-                        this.useItem(i.item)
+                    ...i,
+                    drop: () => {
+                        this.dropItem(i.item)
+                    },
+                    action: () => {
+                        !this.incapacitated && this.useItem(i.item)
                     }
                 }
             })
@@ -143,15 +156,31 @@ export class Astronaut extends CoreObject implements ISelectable {
         }
     }
 
+    dropdir = 0;
+    dropItem(item: ItemType) {
+        if (this.itemCount(item) > 0) {
+            const drop = new DroppedItem(item);
+            this.spendItem(item);
+            drop.position.set(this).add(Vector.fromAngle(this.dropdir += Math.PI / 2).mult(50));
+            game.uiManager.updateObjectOptions(this.uiData);
+        }
+    }
+
+
+
     itemCount(item: ItemType) {
-        return this.items.find(i => i.item == item)?.count ?? 0;
+        return this.items.filter(i => i.item == item).reduce<number>((a, b) => a + b.count, 0);
     }
 
     spendItem(item: ItemType) {
-        const i = this.items.find(i => i.item == item);
-        if (i == undefined) return;
-        i.count--;
-        if (i.count == 0) this.items.splice(this.items.indexOf(i), 1);
+        return Common.spendItem(item, this.items);
+
+    }
+
+    inventorySize = 3;
+
+    pickup(data: { item: ItemType, count: number }): number {
+        return Common.pickup(data, this.items, this.inventorySize);
     }
 
     moving = false;
@@ -166,6 +195,7 @@ export class Astronaut extends CoreObject implements ISelectable {
         }
 
         this.orderQueue = [];
+        this.enterShipIntent = false;
     }
 
     queueOrder(order: Order) {
@@ -197,14 +227,24 @@ export class Astronaut extends CoreObject implements ISelectable {
 
         this.attractor.hit = (spirit: Spirit) => {
             if (spirit.position.distanceSquared(this) < 100 ** 2) {
+                if (this.resist >= 100) {
+                    game.log("Astroaut under attack", this, "critical");
+                }
+
                 this.resist -= game.dt * 5;
+
                 this.stressTimer = 1;
                 if (this.resist < 0) {
-                    this.incapacitated = true;
-                    this.attractor.enabled = false;
-                    this.resist = 0;
-                    this.overlaySprite.visible = false;
-                    this.cancelOrders();
+                    if (!this.incapacitated) {
+                        this.incapacitated = true;
+                        this.attractor.enabled = false;
+                        this.resist = 0;
+                        this.overlaySprite.visible = false;
+                        this.cancelOrders();
+                        game.log("Astroaut incapacitated", this, "critical");
+
+                    }
+
                 }
             }
         }
@@ -216,11 +256,11 @@ export class Astronaut extends CoreObject implements ISelectable {
     }
 
     hover(): void {
-        ISelectableBase.hover(this, this.sprite);
+        Common.hover(this, this.sprite);
     }
 
     unhover(): void {
-        ISelectableBase.unhover(this, this.sprite);
+        Common.unhover(this, this.sprite);
     }
 
     size = 50;
@@ -228,7 +268,7 @@ export class Astronaut extends CoreObject implements ISelectable {
 
     avoid(vector: Vector) {
         const avoidanceRequired = game.system.raycast(this.position, this.targetPosition);
-        if(!avoidanceRequired) return;
+        if (!avoidanceRequired) return;
         const asteroid = Array.from(game.objects.getAll("asteroid")).reduce(toNearest(this));
         const res = game.system.raycast(this.position, asteroid);
 
@@ -246,6 +286,11 @@ export class Astronaut extends CoreObject implements ISelectable {
 
     update() {
         if (this.incapacitated) return;
+        if (this.enterShipIntent) {
+            if (game.ship.position.distance(this) < game.ship.size) game.ship.board(this);
+            this.targetPosition.set(game.ship);
+        }
+
         const dsq = this.position.distanceSquared(this.targetPosition);
         this.moving = false;
         if (dsq > 1) {
@@ -268,13 +313,16 @@ export class Astronaut extends CoreObject implements ISelectable {
             this.orderQueue.shift()?.execute();
         }
 
+
         this.attractor.position.set(this);
 
         if (this.grabbedFlare) {
             this.grabbedFlare.position.set(this).add(this.targetPosition.clone().normalize(30));
         }
 
+
         if (this.stressTimer > 0) {
+            this.attention.setIcon("icon-Icon_Warning", 0xffaa00);
             this.stressTimer -= game.dt;
         } else {
             if (this.resist < 100) {
@@ -284,6 +332,7 @@ export class Astronaut extends CoreObject implements ISelectable {
 
         this.ui.setResistValue(this.resist.toFixed(0));
 
+
     }
 
     draw() {
@@ -292,5 +341,22 @@ export class Astronaut extends CoreObject implements ISelectable {
 
         this.overlaySprite.position.set(this.targetPosition.x, this.targetPosition.y);
         this.overlaySprite.rotation = this.rotation;
+        this.attention.forPosition(this, this.size);
+    }
+
+    override destroy(): void {
+        super.destroy();
+        this.sprite.destroy();
+        this.overlaySprite.destroy();
+        this.cancelOrders();
+        this.attention.destroy();
+        if (this.operatedDrill) this.operatedDrill.operator = undefined;
+        if (this.grabbedFlare) this.grabbedFlare.grabbedBy = undefined;
+        this.cancelOrders();
+        this.attractor.destroy();
+        if (game.selected == this) {
+            game.selected = undefined;
+            game.uiManager.updateObjectOptions();
+        }
     }
 }

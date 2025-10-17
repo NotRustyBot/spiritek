@@ -9,6 +9,8 @@ import { RangeRepeller } from "./repeller";
 import { Spirit } from "./spirit";
 import { Spotlight } from "./spotlight";
 import { Drill } from "./drill";
+import { IPickupable } from "./droppedItem";
+import { ItemType } from "./items";
 
 export class Installation extends CoreObject {
     parentAsteroid?: Asteroid;
@@ -18,7 +20,7 @@ export class Installation extends CoreObject {
     underAttack = false;
 
     constructor(position: Vectorlike, asteroid?: Asteroid) {
-        super("updatable");
+        super("updatable", "pickupable");
         this.parentAsteroid = asteroid;
         this.position.set(position);
 
@@ -42,7 +44,11 @@ export class Installation extends CoreObject {
 
         this.attractor.hit = (spirit: Spirit) => {
             if (spirit.position.distanceSquared(this) < 100 ** 2) {
-                if(this.resist > 0){
+                if (!this.underAttack && this.resist >= 100) {
+                    game.log("Infrastructure under attack", this, "warn");
+                }
+
+                if (this.resist > 0) {
                     this.resist -= game.dt * 5;
                     this.underAttack = true;
                 }
@@ -55,10 +61,33 @@ export class Installation extends CoreObject {
         this.attractor.position.set(this);
     };
 
+    override destroy(): void {
+        super.destroy();
+        this.girder?.destroy();
+    }
+
 }
 
-export class TurretInstallation extends Installation {
+export class TurretInstallation extends Installation implements IPickupable {
     turret = new Turret();
+
+    constructor(position: Vectorlike, asteroid: Asteroid) {
+        super(position, asteroid);
+        this.turret.pickupProxy = this;
+    }
+
+    pickup(): void {
+        this.destroy();
+    }
+
+    override destroy(): void {
+        this.turret.destroy();
+        super.destroy();
+    }
+
+    checkPickup(): { item: ItemType; count: number; } {
+        return { item: ItemType.ConstructionParts, count: 1 }
+    }
 
     override update(): void {
         super.update();
@@ -76,6 +105,11 @@ export class TurretInstallation extends Installation {
 export class SpotlightInstallation extends Installation {
     spotlight = new Spotlight();
 
+    constructor(position: Vectorlike, asteroid: Asteroid) {
+        super(position, asteroid);
+        this.spotlight.pickupProxy = this;
+    }
+
     override update(): void {
         super.update();
         this.spotlight.confused = this.resist < 90;
@@ -86,6 +120,19 @@ export class SpotlightInstallation extends Installation {
         this.underAttack = false;
         this.spotlight.position.set(this);
     }
+
+    pickup(): void {
+        this.destroy();
+    }
+
+    override destroy(): void {
+        this.spotlight.destroy();
+        super.destroy();
+    }
+
+    checkPickup(): { item: ItemType; count: number; } {
+        return { item: ItemType.ConstructionParts, count: 1 }
+    }
 }
 
 export class DrillInstallation extends Installation {
@@ -94,6 +141,8 @@ export class DrillInstallation extends Installation {
         super(position, asteroid);
         this.attractor.enabled = false;
         this.drill = new Drill(asteroid, this);
+        this.drill.pickupProxy = this;
+
         this.attractor.hit = () => { };
 
         if (asteroid) {
@@ -105,6 +154,20 @@ export class DrillInstallation extends Installation {
         this.drill.position.set(position);
         this.drill.rotate();
 
+    }
+
+
+    pickup(): void {
+        this.destroy();
+    }
+
+    checkPickup(): { item: ItemType; count: number; } {
+        return { item: ItemType.DrillParts, count: 1 }
+    }
+
+    override destroy(): void {
+        this.drill.destroy();
+        super.destroy();
     }
 
 }

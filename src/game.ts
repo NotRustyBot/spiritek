@@ -15,6 +15,12 @@ import { Lightmap } from "./lighting/lightmap";
 import { Shadowmap } from "./lighting/shadowmap";
 import { Light } from "./lighting/light";
 import { System } from "check2d"
+import { ObjectiveManager } from "./objectives";
+import { DroppedItem } from "./droppedItem";
+import { ItemType } from "./items";
+import { Vectorlike } from "./vector";
+import { LogData } from "./ui/log";
+import { Random } from "random";
 
 export let game: Game;
 
@@ -53,6 +59,7 @@ export class Game {
         projectile: new Container(),
         spirit: new Container(),
         overlay: new Container(),
+        attention: new Container(),
     }
 
     objects = new ObjectManager();
@@ -61,6 +68,7 @@ export class Game {
     camera: Camera;
     uiManager!: UiManager;
     orderManager!: OrderManager;
+    objectiveManager!: ObjectiveManager;
     selected: ISelectable | undefined = undefined;
     hovered: ISelectable | undefined = undefined;
 
@@ -106,6 +114,7 @@ export class Game {
         this.containers.world.addChild(this.containers.spirit);
         this.containers.world.addChild(this.debugGraphics);
         this.containers.world.addChild(this.containers.overlay);
+        this.containers.world.addChild(this.containers.attention);
 
 
         this.containers.light.filters = [new BlurFilter({})]
@@ -115,9 +124,9 @@ export class Game {
         new WaveManager();
 
         for (const obj of scene) {
-            if(obj.type == "asteroid"){
-                const stone = new Asteroid(obj.kind ?? "stone_1" as any, obj.rotation, obj.x, obj.y);
-            }else if(obj.type == "ship"){
+            if (obj.type == "asteroid") {
+                const stone = new Asteroid(obj.kind ?? "stone_1" as any, obj.rotation, obj.x, obj.y, obj.resource);
+            } else if (obj.type == "ship") {
                 this.ship.position.set(obj);
                 this.ship.rotation = obj.rotation ?? 0;
                 this.ship.targetPosition.set(obj);
@@ -131,15 +140,9 @@ export class Game {
 
         this.containers.world.scale.set(0.5);
 
-        const astro = new Astronaut();
-        const astro2 = new Astronaut();
-        const astro3 = new Astronaut();
-        const astro4 = new Astronaut();
-        astro3.position.set(0, 1500);
-        astro3.targetPosition.set(2000, 1500);
-
         this.uiManager = new UiManager();
         this.orderManager = new OrderManager();
+        this.objectiveManager = new ObjectiveManager();
 
         //TODO this is only temp
         let sprite = new Sprite(Lightmap.texture);
@@ -190,15 +193,7 @@ export class Game {
                 if (this.controls.clicked) {
                     this.controls.clicked = false;
                     this.controls.pointerDown = false;
-                    this.selected?.unselect?.();
-                    nearest.select?.();
-                    this.selected = nearest;
-                    if ("uiData" in nearest) {
-                        const data = nearest.uiData;
-                        game.uiManager.updateObjectOptions(data as ObjectOptionsData);
-                    } else {
-                        game.uiManager.updateObjectOptions();
-                    }
+                    this.select(nearest);
                     return true;
                 }
             } else {
@@ -244,9 +239,47 @@ export class Game {
 
     }
 
+    log(message: string, target?: Vectorlike | ISelectable, kind?: LogData["className"], icon?: string) {
+        let data: LogData = {
+            text: message,
+            className: kind
+        }
+
+        if (target) {
+            data.click = () => {
+                this.camera.position.set(target);
+                if ("select" in target) {
+                    this.select(target);
+                }
+            }
+        }
+
+        if (icon == undefined) {
+            if (kind == "objective") data.icon = "icon/Icon_Star"
+            if (kind == "warn") data.icon = "icon/Icon_Warning"
+            if (kind == "critical") data.icon = "icon/Icon_Warning"
+        }
+
+
+        this.uiManager.addLog(data);
+    }
+
+    select(target: ISelectable) {
+        this.selected?.unselect?.();
+        target.select?.();
+        this.selected = target;
+        if ("uiData" in target) {
+            const data = target.uiData;
+            game.uiManager.updateObjectOptions(data as ObjectOptionsData);
+        } else {
+            game.uiManager.updateObjectOptions();
+        }
+    }
+
     clear() {
         for (const obj of [...this.objects.getAll("scenebound")]) {
             obj.destroy();
         }
     }
 }
+

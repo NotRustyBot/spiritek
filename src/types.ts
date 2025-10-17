@@ -1,6 +1,7 @@
 import { Graphics, Renderer, RenderTexture } from "pixi.js"
 import { CoreObject } from "./core"
 import { ObjectOptionsData } from "./ui/objectOptions"
+import { IPickupable } from "./droppedItem"
 
 export interface ObjectKinds {
     preupdate: { preupdate(): void }
@@ -13,7 +14,16 @@ export interface ObjectKinds {
     selectable: ISelectable;
 }
 
-export type ISelectable = CoreObject & { uiData?: ObjectOptionsData, hoverCheck?(): boolean, select?(): void, unselect?(): void, hover?(): void, unhover?(): void, size: number }
+export type ISelectable = CoreObject & {
+    uiData?: ObjectOptionsData,
+    hoverCheck?(): boolean,
+    select?(): void,
+    unselect?(): void,
+    hover?(): void,
+    unhover?(): void,
+    size: number,
+    pickupProxy?: IPickupable,
+}
 
 export type ObjectKind = keyof ObjectKinds;
 

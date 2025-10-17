@@ -3,12 +3,13 @@ import { CoreObject } from "./core";
 import { game } from "./game";
 import { ISelectable } from "./types";
 import { asset } from "./util";
-import { ISelectableBase } from "./select";
+import { Common } from "./common";
 import { Asteroid } from "./asteroid";
 import { Astronaut } from "./astronaut";
 import { Vector } from "./vector";
 import { Installation } from "./installation";
 import { ObjectOptionsData } from "./ui/objectOptions";
+import { IPickupable } from "./droppedItem";
 
 
 export class Drill extends CoreObject implements ISelectable {
@@ -21,6 +22,7 @@ export class Drill extends CoreObject implements ISelectable {
     working = false;
 
     updateExtraction = (value: string) => { }
+    pickupProxy?: IPickupable;
 
     get uiData(): ObjectOptionsData {
         return {
@@ -45,6 +47,7 @@ export class Drill extends CoreObject implements ISelectable {
         this.asteroid = asteroid;
         this.installation = installation;
         asteroid.drill = this;
+        game.log("drill constructed", this, "objective");
     }
 
     rotate() {
@@ -52,11 +55,11 @@ export class Drill extends CoreObject implements ISelectable {
     }
 
     hover() {
-        ISelectableBase.hover(this, this.sprite);
+        Common.hover(this, this.sprite);
     }
 
     unhover() {
-        ISelectableBase.unhover(this, this.sprite);
+        Common.unhover(this, this.sprite);
     }
 
     update() {
@@ -64,7 +67,13 @@ export class Drill extends CoreObject implements ISelectable {
         if (this.operator && this.asteroid.resource > 0) {
             if (this.operator.position.distanceSquared(this) < 100 ** 2 && this.operator.stressTimer <= 0) {
                 this.working = true;
-                this.asteroid.resource -= game.dt;
+                const mined = Math.min(game.dt, this.asteroid.resource);
+                this.asteroid.resource -= mined;
+                game.objectiveManager.minedOre += mined;
+
+                if (this.asteroid.resource <= 0) {
+                    game.log("drill finished mining", this, "objective");
+                }
             }
         }
 
@@ -82,5 +91,10 @@ export class Drill extends CoreObject implements ISelectable {
         }
 
         this.sprite.position.set(v.x, v.y);
+    }
+
+    destroy(): void {
+        super.destroy();
+        this.sprite.destroy();
     }
 }

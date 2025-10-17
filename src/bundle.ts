@@ -37,8 +37,44 @@ const bundle = {
       src: "./img/girder.png"
     },
     {
+      alias: "icon-Icon_Cross",
+      src: "./img/icon/Icon_Cross.png"
+    },
+    {
+      alias: "icon-Icon_Share1",
+      src: "./img/icon/Icon_Share1.png"
+    },
+    {
+      alias: "icon-Icon_Star",
+      src: "./img/icon/Icon_Star.png"
+    },
+    {
+      alias: "icon-Icon_Warning",
+      src: "./img/icon/Icon_Warning.png"
+    },
+    {
       alias: "light",
       src: "./img/light.png"
+    },
+    {
+      alias: "muzzle-Muzzle_01",
+      src: "./img/muzzle/Muzzle_01.png"
+    },
+    {
+      alias: "muzzle-Muzzle_02",
+      src: "./img/muzzle/Muzzle_02.png"
+    },
+    {
+      alias: "muzzle-Muzzle_03",
+      src: "./img/muzzle/Muzzle_03.png"
+    },
+    {
+      alias: "muzzle-Muzzle_04",
+      src: "./img/muzzle/Muzzle_04.png"
+    },
+    {
+      alias: "muzzle-Muzzle_05",
+      src: "./img/muzzle/Muzzle_05.png"
     },
     {
       alias: "noisy-sqare",
