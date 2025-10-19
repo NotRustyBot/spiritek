@@ -1,4 +1,4 @@
-import { BlurFilter, Container, Graphics, RenderTexture, Sprite, type Application } from "pixi.js";
+import { BlurFilter, Container, Graphics, RenderTexture, Sprite, Texture, type Application } from "pixi.js";
 import { ObjectManager } from "./objectManager";
 import { Asteroid } from "./asteroid";
 import { WaveManager } from "./waveManager";
@@ -87,6 +87,7 @@ export class Game {
     hovered: ISelectable | undefined = undefined;
 
     shadowCasterTexture: RenderTexture;
+    lightRenderSprite!:Sprite;
 
     system!: System;
 
@@ -104,6 +105,10 @@ export class Game {
             Lightmap.resize();
             Shadowmap.resize();
             this.shadowCasterTexture.resize(window.innerWidth, window.innerHeight);
+            
+            //weird trick to force the sprite to resize to Lightmap resolution
+            this.lightRenderSprite.texture = Texture.WHITE;
+            this.lightRenderSprite.texture = Lightmap.texture;
         });
     }
 
@@ -148,9 +153,9 @@ export class Game {
         this.levelManager = new LevelManager();
 
         //TODO this is only temp
-        let sprite = new Sprite(Lightmap.texture);
-        this.containers.screenLight.addChild(sprite);
-        sprite.filters = [new BlurFilter({})];
+        this.lightRenderSprite = new Sprite(Lightmap.texture);
+        this.containers.screenLight.addChild(this.lightRenderSprite);
+        this.lightRenderSprite.filters = [new BlurFilter({})];
 
         this.levelManager.loadLevel();
 
