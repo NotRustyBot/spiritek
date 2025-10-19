@@ -22,6 +22,7 @@ import { LogData } from "./ui/log";
 import { Random } from "random";
 import { LevelManager } from "./levelManager";
 import { AudioManager } from "./audioManager";
+import { ShaderMesh } from "./lighting/shaderMesh";
 
 export let game: Game;
 
@@ -107,6 +108,7 @@ export class Game {
     }
 
     init() {
+        ShaderMesh.list.clear();
         console.log("init real");
         Lightmap.init();
         this.system = new System();
@@ -167,12 +169,12 @@ export class Game {
             obj.preupdate();
         }
 
-        if (this.controls.pressed["KeyR"]) {
+        /*if (this.controls.pressed["KeyR"]) {
             console.log(Light.list);
-            let sprite = new Sprite(Lightmap.texture);
+            let sprite = new Sprite(Shadowmap.shadowDataTexture);
             this.app.stage.addChild(sprite);
             sprite.filters = [new BlurFilter({})];
-        }
+        }*/
 
         if (this.controls.pressed["KeyP"]) {
             game.pause = !game.pause;
@@ -231,6 +233,9 @@ export class Game {
 
         for (const obj of [...this.objects.getAll("drawable")]) {
             obj.draw();
+        }
+        for (const shaderMesh of ShaderMesh.list) {
+            shaderMesh.setUniform("uInverseCameraMatrix", this.camera.transformMatrix.invert().toArray(true));
         }
 
         Shadowmap.clearOccluderTexture();

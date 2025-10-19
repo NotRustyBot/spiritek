@@ -9,6 +9,7 @@ const float shadowStrength = .95f;
 uniform int lightAmount;
 
 in vec2 vUV;
+in vec2 vWorldUV;
 uniform sampler2D uSampler;
 uniform sampler2D uShadowMap;
 uniform sampler2D uLightData;
@@ -103,10 +104,14 @@ void main(void) {
         //angularFalloff = 1.;
 
         vec3 addition = distanceFalloff * angularFalloff * l.color * l.intensity * 4.f;
+
+
+        /*angularFalloff = nClamp(1.-step(l.width,abs(PI - angleOffset)));
+        addition = disLinear*angularFalloff*l.color*l.intensity*3.f;*/
+
         addition *= 1.f - nClamp((dis - shadowDist) * .2f * l.range) * shadowStrength;
 
-        lightMap += addition;
-        lightMap += vec3(dis/100000.);
+        lightMap+=addition;
 
         //lightMap+= length((l.position - vUV) / uPixelSize / l.range);
     }
@@ -115,4 +120,7 @@ void main(void) {
     color.rgb = PBRNeutralToneMapping(color.rgb / 2.f);
     //color.rg = vUV;
     color.a = 0.;
+    //color.rg = vWorldUV/100.;
+    //color.r = sin(vWorldUV.x/10.)*1.-abs(vWorldUV.x/1000.);
+    //color.g = sin(vWorldUV.y/10.)*1.-abs(vWorldUV.y/1000.);
 }

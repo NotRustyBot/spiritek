@@ -1,4 +1,4 @@
-import { Rectangle } from "pixi.js";
+import { Matrix, Rectangle } from "pixi.js";
 import { CoreObject } from "./core";
 import { game } from "./game";
 import { Vector } from "./vector";
@@ -29,6 +29,23 @@ export class Camera extends CoreObject {
 
     get worldRect(): Rectangle {
         return new Rectangle(this.x - this.center.x, this.y - this.center.y, this.width, this.height);
+    }
+
+    get transformMatrix(): Matrix {
+        const m = new Matrix();
+        m.setTransform(
+            (-this.x) * this.zoom+this.center.x,
+            (-this.y) * this.zoom+this.center.y,
+            0,
+            0,
+            this.zoom,
+            this.zoom,
+            0,
+            0,
+            0
+        );
+        //m.translate(-1000*this.zoom,-1*this.zoom);
+        return m;
     }
 
     constructor() {

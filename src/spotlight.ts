@@ -83,7 +83,7 @@ export class Spotlight extends CoreObject implements ISelectable {
 
             s.affect(-power, this);
         };
-        this.light = new Light({ position: this.position, intensity: 0.7, color: new CustomColor(255, 10, 5) });
+        this.light = new Light({ position: this.position, range: 2000,width:.6, intensity: 0.7, color: new CustomColor(255, 250, 245) });
     }
 
     select(): void {

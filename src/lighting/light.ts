@@ -76,7 +76,7 @@ export class Light {
             // r: width, g: range, b: intensity
             // rgb: color
             array.set([renderPos.x, renderPos.y, light.angle, 1], index + 4 * 0);
-            array.set([light.width, light.range, light.intensity, 1], index + 4 * 1);
+            array.set([light.width, light.range*game.camera.zoom, light.intensity, 1], index + 4 * 1);
             array.set([light.color.r / 255, light.color.g / 255, light.color.b / 255, 1], index + 4 * 2);
         }
         //Shadowmap.lightDataTexture = Texture.from({ resource: array, height: Light.maxAmount, width: width, format: "rgba32float" });

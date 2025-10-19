@@ -1,4 +1,4 @@
-import { Mesh, Texture, MeshGeometry, GlProgram, DestroyOptions, Container, TextureShader, Shader } from "pixi.js";
+import { Mesh, Texture, MeshGeometry, GlProgram, DestroyOptions, Container, TextureShader, Shader, UniformGroup, Matrix } from "pixi.js";
 import defaultVert from "./vert.vert?raw";
 import defaultFrag from "./frag.frag?raw";
 import { Vector, Vectorlike } from "../vector";
@@ -22,6 +22,7 @@ export type ShaderMeshOptions = {
     parent?: Container
 };
 export class ShaderMesh extends Mesh {
+    public static list: Set<ShaderMesh> = new Set();
     public get shader(): TextureShader {
         return super.shader as TextureShader;
     }
@@ -53,7 +54,9 @@ export class ShaderMesh extends Mesh {
                 resources[options.customTextures[i].name] = options.customTextures[i].texture.source;
             }
         }
-        resources.group = options.customUniforms ? Object.assign({}, options.customUniforms) : {};
+        (resources.group as Uniforms) = options.customUniforms ? Object.assign({}, options.customUniforms) : {};
+        (resources.group as Uniforms).uInverseCameraMatrix = { type: "mat3x3<f32>", value: new Matrix().toArray() };
+
         const vertex = options.vert ?? defaultVert;
         const fragment = options.frag ?? defaultFrag;
         const shader = new Shader({
@@ -64,6 +67,7 @@ export class ShaderMesh extends Mesh {
         this.anchor = options.anchor ?? { x: 0, y: 0 };
         this.resize(options.size?.x ?? texture.width, options.size?.y ?? texture.height);
         this.scale.set(1);
+        ShaderMesh.list.add(this);
         //console.log(game.app.renderer.globalUniforms.bindGroup);
     }
     resize(width: number, height: number) {
@@ -81,6 +85,7 @@ export class ShaderMesh extends Mesh {
     }
     destroy(options?: DestroyOptions): void {
         super.destroy(options);
+        ShaderMesh.list.delete(this);
         this.shader?.destroy();
     }
 }
