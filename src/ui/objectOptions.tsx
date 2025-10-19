@@ -32,6 +32,7 @@ export function ObjectOptions(data?: ObjectOptionsData) {
 
     if (data.stats) {
         sections.push(
+            <h2>Stats</h2>,
             <div>
                 {data.stats?.map((s) => {
                     return <div>
@@ -50,6 +51,7 @@ export function ObjectOptions(data?: ObjectOptionsData) {
     }
     if (data.actions) {
         sections.push(
+            <h2>Actions</h2>,
             <div class="option-container">
                 {data.actions?.map((d) => {
                     let ref: HTMLDivElement;
@@ -72,6 +74,7 @@ export function ObjectOptions(data?: ObjectOptionsData) {
 
     if (data.items) {
         sections.push(
+            <h2>Inventory</h2>,
             <div class="items-container">
                 {
                     data.items.map((d) => {
@@ -96,7 +99,7 @@ export function ObjectOptions(data?: ObjectOptionsData) {
         );
     }
     return <div id="object-options">
-        <h2>{data.name}</h2>
+        <h1>{data.name}</h1>
         {sections}
     </div>
 }

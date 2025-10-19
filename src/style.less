@@ -19,6 +19,7 @@ body {
     top: 0;
     left: 0;
     pointer-events: none;
+    font-family: "Geist Mono", monospace;
 }
 
 #object-options {
@@ -27,7 +28,29 @@ body {
     width: 325px;
     display: flex;
     flex-direction: column;
+    border-bottom-right-radius: 10px;
     gap: 5px;
+    color:rgb(183, 183, 183);
+}
+
+#object-options>h1,
+#object-options>h2 {
+    font-family: "Big Shoulders", sans-serif;
+    text-transform: uppercase;
+    text-align: center;
+    font-weight: 300;
+    font-size: 2em;
+    letter-spacing: 0.1em;
+    margin: 0.5em 0em;
+    color:white;
+}
+
+#object-options>h2 {
+    font-size: 1em;
+    margin-top: 1em;
+    font-family: "Geist Mono", monospace;
+    text-align: left;
+    font-weight: 500;
 }
 
 .option-container {
@@ -40,15 +63,16 @@ body {
     display: flex;
     align-items: center;
     gap: 5px;
-    border: 1px solid black;
-    padding: 5px;
     cursor: pointer;
-    transition: 300ms;
+    transition: .1s;
     pointer-events: all;
+    height: 50px;
+    padding: 10px;
+    margin: 0px -10px;
 }
 
 .object-action:hover {
-    background-color: #222;
+    background-color: #343434;
 }
 
 .object-action.disabled {
@@ -57,14 +81,24 @@ body {
 }
 
 .object-action.active {
-    background-color: #005500;
-
+    background-color: #56702e;
+    color:white;
+    animation: pulse .8s alternate infinite ease-in-out;
 }
 
+@keyframes pulse {
+    0% {
+        background-color: #40551f;
+    }
+
+    100% {
+        background-color: #789a45;
+    }
+}
 
 .object-action img {
-    width: 32px;
-    height: 32px;
+    width: 40px;
+    height: 40px;
 }
 
 .item-action {
@@ -230,8 +264,8 @@ body {
     display: flex;
     gap: 5px;
     font-size: 24px;
-    &__label {
-    }
+
+    &__label {}
 
     &__value {
         color: #ffaa00;
