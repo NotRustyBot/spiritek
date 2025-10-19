@@ -57,6 +57,12 @@ export class LevelManager extends CoreObject {
             this.shipSkin.position.y = game.camera.height - 50 + Math.sin(game.time * 20) ** 4 * 4;
             this.shipSkin.position.x = this.animationX + Math.sin(game.time * 0.5) ** 3 * 200;
             this.shipSkin.rotation = Math.sin(game.time * 10) ** 4 * 0.01 + Math.PI;
+        } else if (game.ship.resist <= 0 && !game.pause) {
+            game.pause = true;
+            setTimeout(() => {
+                game.pause = false;
+                this.loadLevel();
+            }, 3000)
         }
     }
 
@@ -66,6 +72,7 @@ export class LevelManager extends CoreObject {
         this.shipSkin.anchor.set(0.5);
         game.containers.transitionContainer.addChild(this.shipSkin);
         let objectiveRatings: Array<ObjectiveReportData> = [];
+        game.audioManager.music("music-wolf").seek(15);
         let total = 0
         for (const objective of game.objectiveManager.activeObjectives) {
             let rating = objective.getRating();
@@ -152,15 +159,26 @@ class TutorialLevel extends Level {
         game.objectiveManager.init(activeObjectives);
 
         game.waveManager.spawnClocky.limit = 3;
+        game.audioManager.music("music-crystalEchoes");
+
     }
 
     wasDrillDeployed = false;
+    exitAllowed = false;
 
     update(): void {
         if (!this.wasDrillDeployed && game.objectiveManager.minedOre > 0) {
             this.wasDrillDeployed = true;
+            game.audioManager.music("music-fog");
+
             const clocky = Clocky.once(10).autoTick();
             clocky.during = () => { game.waveManager.spawnClocky.limit = 0.5 + 2.5 * (1 - clocky.progress) };
+        }
+
+        if (!this.exitAllowed && game.objectiveManager.criticalNonExitComplete) {
+            this.exitAllowed = true;
+            game.audioManager.music("music-darkPlanet");
+
         }
     }
 }
@@ -210,6 +228,8 @@ class Level1 extends Level {
                 }
             },
         ]).autoTick();
+
+        game.audioManager.music("music-labyrinth");
     }
 
 

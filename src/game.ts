@@ -21,6 +21,7 @@ import { Vectorlike } from "./vector";
 import { LogData } from "./ui/log";
 import { Random } from "random";
 import { LevelManager } from "./levelManager";
+import { AudioManager } from "./audioManager";
 
 export let game: Game;
 
@@ -79,6 +80,7 @@ export class Game {
     orderManager!: OrderManager;
     waveManager!: WaveManager;
     objectiveManager!: ObjectiveManager;
+    audioManager!: AudioManager;
     levelManager!: LevelManager;
     selected: ISelectable | undefined = undefined;
     hovered: ISelectable | undefined = undefined;
@@ -135,6 +137,7 @@ export class Game {
         }
 
         this.containers.world.scale.set(0.5);
+        game.audioManager = new AudioManager();
         game.waveManager = new WaveManager();
 
         this.uiManager = new UiManager();

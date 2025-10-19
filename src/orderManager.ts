@@ -468,7 +468,7 @@ export class AstronautPlaceInstallation extends AstronautOrder {
                 if (inRange) {
                     this.execute();
                 } else {
-                    this.executeAfterMove(200);
+                    this.executeAfterMove(10);
                 }
             }
         });

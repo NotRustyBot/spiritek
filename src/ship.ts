@@ -265,8 +265,8 @@ export class Ship extends CoreObject implements ISelectable {
         const dsq = this.position.distanceSquared(this.targetPosition);
         if (dsq > 1) {
             const diff = this.targetPosition.diff(this);
-            const align = Math.abs(angleDistance(diff.toAngle(), this.rotation)) < 1 ? 1 : 0.3;
-            const speed = 200 * game.dt * align;
+            const align = Math.abs(angleDistance(diff.toAngle(), this.rotation)) < 1 ? 1 : 0.1;
+            const speed = 600 * game.dt * align;
             if (dsq < speed) {
                 this.position.set(this.targetPosition);
             } else {

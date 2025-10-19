@@ -4,7 +4,102 @@
 const bundle_sound = {
   name: "bundle_sound",
   assets: [
-
+    {
+      alias: "music-convert_all",
+      src: "./audio/music/convert_all.bat"
+    },
+    {
+      alias: "music-crystalEchoes",
+      src: "./audio/music/crystalEchoes.ogg"
+    },
+    {
+      alias: "music-crystalEchoes",
+      src: "./audio/music/crystalEchoes.wav"
+    },
+    {
+      alias: "music-darkPlanet",
+      src: "./audio/music/darkPlanet.ogg"
+    },
+    {
+      alias: "music-darkPlanet",
+      src: "./audio/music/darkPlanet.wav"
+    },
+    {
+      alias: "music-fog",
+      src: "./audio/music/fog.ogg"
+    },
+    {
+      alias: "music-fog",
+      src: "./audio/music/fog.wav"
+    },
+    {
+      alias: "music-labyrinth",
+      src: "./audio/music/labyrinth.ogg"
+    },
+    {
+      alias: "music-labyrinth",
+      src: "./audio/music/labyrinth.wav"
+    },
+    {
+      alias: "music-nowYouAre",
+      src: "./audio/music/nowYouAre.ogg"
+    },
+    {
+      alias: "music-nowYouAre",
+      src: "./audio/music/nowYouAre.wav"
+    },
+    {
+      alias: "music-wolf",
+      src: "./audio/music/wolf.ogg"
+    },
+    {
+      alias: "music-wolf",
+      src: "./audio/music/wolf.wav"
+    },
+    {
+      alias: "voice-e_getout",
+      src: "./audio/voice/e_getout.ogg"
+    },
+    {
+      alias: "voice-e_more",
+      src: "./audio/voice/e_more.ogg"
+    },
+    {
+      alias: "voice-e_wave",
+      src: "./audio/voice/e_wave.ogg"
+    },
+    {
+      alias: "voice-e_what",
+      src: "./audio/voice/e_what.ogg"
+    },
+    {
+      alias: "voice-s_arrived",
+      src: "./audio/voice/s_arrived.ogg"
+    },
+    {
+      alias: "voice-s_look",
+      src: "./audio/voice/s_look.ogg"
+    },
+    {
+      alias: "voice-s_overstay",
+      src: "./audio/voice/s_overstay.ogg"
+    },
+    {
+      alias: "voice-s_presence",
+      src: "./audio/voice/s_presence.ogg"
+    },
+    {
+      alias: "voice-s_shifting1",
+      src: "./audio/voice/s_shifting1.ogg"
+    },
+    {
+      alias: "voice-s_shifting2",
+      src: "./audio/voice/s_shifting2.ogg"
+    },
+    {
+      alias: "voice-s_tide",
+      src: "./audio/voice/s_tide.ogg"
+    }
   ]
 } as const;
 

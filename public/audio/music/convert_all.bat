@@ -1,0 +1,1 @@
+for %%f in (*.wav) do ffmpeg -i "%%f" -y -c:a libvorbis "%%~nf.ogg"
