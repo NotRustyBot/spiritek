@@ -14,7 +14,7 @@ export class Projectile extends CoreObject {
     sprite: Sprite;
 
     constructor(position: Vectorlike, target: Spirit | undefined, fallbackAngle: number) {
-        super("updatable");
+        super("updatable", "scenebound");
         this.position.set(position);
         this.sprite = new Sprite(asset("projectile"));
         this.sprite.anchor.set(0.5);

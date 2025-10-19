@@ -20,7 +20,7 @@ export class Installation extends CoreObject {
     underAttack = false;
 
     constructor(position: Vectorlike, asteroid?: Asteroid) {
-        super("updatable", "pickupable");
+        super("updatable", "pickupable", "scenebound");
         this.parentAsteroid = asteroid;
         this.position.set(position);
 

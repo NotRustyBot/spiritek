@@ -4,7 +4,7 @@ import { AttractFlare, KillFlare, RepellFlare } from "./flare";
 import { ShipFloodlight, ShipModule, ShipTurret } from "./shipModule";
 import { Spotlight } from "./spotlight";
 import { Sprite } from "pixi.js";
-import { angleDistance, angleInterpolate, asset, rotate, toNearest } from "./util";
+import { angleDistance, angleInterpolate, asset, fixAngle, rotate, toNearest } from "./util";
 import { PolygonRepeller, RangeRepeller } from "./repeller";
 import shipHitbox from "./hitbox/ship.json";
 import { Spirit } from "./spirit";
@@ -38,7 +38,8 @@ export class Ship extends CoreObject implements ISelectable {
 
     astronauts = 3;
 
-    resist = 1000;
+    resist = 250;
+    maxResist = 250;
     ui = {
         setResist: (value: string) => { }
     }
@@ -138,15 +139,10 @@ export class Ship extends CoreObject implements ISelectable {
     targetRotation = -1;
     targetPosition = new Vector();
 
-    items: Inventory = [
-        { item: ItemType.ConstructionParts, count: 3 },
-        { item: ItemType.DrillParts, count: 2 },
-        { item: ItemType.KillFlare, count: 2 },
-        { item: ItemType.RepellFlare, count: 4 },
-    ];
+    items: Inventory = [];
 
     constructor() {
-        super("updatable", "selectable", "drawable");
+        super("updatable", "selectable", "drawable", "scenebound");
         this.sprite = new Sprite(asset("ship"));
         game.containers.ship.addChild(this.sprite);
         this.sprite.anchor.set(0.5);
@@ -259,9 +255,9 @@ export class Ship extends CoreObject implements ISelectable {
 
     update() {
 
+        this.targetRotation = fixAngle(this.targetRotation);
 
-
-        const rotSpeed = 0.3;
+        const rotSpeed = 30 * game.dt;
         if (this.rotation != this.targetRotation) {
             this.rotation = angleInterpolate(this.rotation, this.targetRotation, game.dt * rotSpeed);
         }
@@ -276,6 +272,8 @@ export class Ship extends CoreObject implements ISelectable {
             } else {
                 this.position.add(diff.normalize(speed));
             }
+        }
+        if (dsq > 1 || this.rotation != this.targetRotation) {
             this.overlaySprite.visible = true;
         } else {
             this.overlaySprite.visible = false;
@@ -298,6 +296,15 @@ export class Ship extends CoreObject implements ISelectable {
 
         this.overlaySprite.position.set(this.targetPosition.x, this.targetPosition.y);
         this.overlaySprite.rotation = this.targetRotation;
+    }
+
+    destroy(): void {
+        super.destroy();
+        this.repeller.destroy();
+        this.sprite.destroy();
+        this.attractor.destroy();
+        this.overlaySprite.destroy();
+        this.attention.destroy();
     }
 }
 

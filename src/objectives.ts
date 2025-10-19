@@ -4,6 +4,7 @@ import { game } from "./game";
 import { ItemType } from "./items";
 import { ObjectiveUiData } from "./ui/objectives";
 import { asset } from "./util";
+import { ObjectiveReportData } from "./levelManager";
 
 export class ObjectiveManager extends CoreObject {
     minedOre = 0;
@@ -14,24 +15,35 @@ export class ObjectiveManager extends CoreObject {
         return this.activeObjectives.every(o => o.isCompleted || o.isOptional)
     }
 
-    constructor() {
-        super("updatable");
-        this.activeObjectives.push(new MiningObjective())
-        this.activeObjectives.push(new RecoverMiningEquipment())
-        this.activeObjectives.push(new CrewOnBoard())
-        this.activeObjectives.push(new ExitStrategy())
-        game.uiManager.updateObjectives(this.activeObjectives.map(v => ({ dataGetter: (g) => v.updateUi = g })));
+    get criticalNonExitComplete() {
+        return this.activeObjectives.every(o => o.isCompleted || o.isOptional || o instanceof ExitStrategy)
+    }
 
+    constructor() {
+        super("updatable", "scenebound");
+
+    }
+
+    init(objectives: Array<Objective>) {
+        this.activeObjectives = objectives;
+        game.uiManager.updateObjectives(this.activeObjectives.map(v => ({ dataGetter: (g) => v.updateUi = g })));
     }
 
     update() {
         for (const objective of this.activeObjectives) {
             objective.update();
         }
+
+        if (this.criticalObjectivesComplete) {
+            game.levelManager.transition();
+            for (const objective of this.activeObjectives) {
+                objective.clear()
+            }
+        }
     }
 }
 
-export class Objective {
+export abstract class Objective {
     isCompleted = false;
     isOptional: boolean;
     constructor(optional = false) {
@@ -40,7 +52,8 @@ export class Objective {
     updateUi!: (data: ObjectiveUiData) => void;
     update() { }
 
-    getRating() { }
+    clear() { }
+    abstract getRating(): ObjectiveReportData | undefined;
 }
 
 export class MiningObjective extends Objective {
@@ -48,11 +61,18 @@ export class MiningObjective extends Objective {
     update(): void {
         if (game.objectiveManager.minedOre >= this.target) this.isCompleted = true;
         this.updateUi({
-            name: "Restock",
             desc: "Mine ore",
             status: game.objectiveManager.minedOre.toFixed(1) + " / " + this.target.toFixed(1),
             completed: this.isCompleted
         });
+    }
+
+    override getRating(): ObjectiveReportData {
+        return {
+            result: this.isCompleted ? "success" : "failure",
+            status: "Mined " + game.objectiveManager.minedOre.toFixed(1) + " ore",
+            score: game.objectiveManager.minedOre
+        }
     }
 }
 
@@ -62,11 +82,20 @@ export class RecoverMiningEquipment extends Objective {
         let count = game.ship.itemCount(ItemType.DrillParts);
         if (count >= this.target) this.isCompleted = true;
         this.updateUi({
-            name: "Reuse",
             desc: "Bring mining equipment back to the ship",
             status: count + " / " + this.target,
             completed: this.isCompleted
         });
+    }
+
+    getRating(): ObjectiveReportData | undefined {
+        const parts = game.ship.itemCount(ItemType.DrillParts);
+        if (parts >= this.target) return undefined;
+        return {
+            result: "failure",
+            status: "Lost  " + (this.target - parts) + " pieces of mining equipment",
+            score: Math.round((this.target - parts) * -100)
+        };
     }
 }
 
@@ -76,11 +105,21 @@ export class CrewOnBoard extends Objective {
         let count = game.ship.astronauts;
         if (count >= this.target) this.isCompleted = true;
         this.updateUi({
-            name: "Human Resources",
             desc: "Have astronauts on board",
             status: count + " / " + this.target,
             completed: this.isCompleted
         });
+    }
+
+
+    getRating(): ObjectiveReportData | undefined {
+        let count = game.ship.astronauts;
+        if (count >= this.target) return undefined;
+        return {
+            result: "failure",
+            status: "Lost  " + (this.target - count) + " astronauts.",
+            score: Math.round((this.target - count) * -1000)
+        };
     }
 }
 
@@ -93,16 +132,24 @@ export class ExitStrategy extends Objective {
         this.sprite.anchor.set(0.5);
         this.sprite.width = 800;
         this.sprite.height = 800;
-        this.sprite.x = 4000;
+        this.sprite.x = -4000;
     }
 
     update(): void {
+        this.sprite.visible = game.objectiveManager.criticalNonExitComplete;
         if (game.ship.position.distanceSquared(this.sprite) < 400 ** 2) this.isCompleted = true;
         this.updateUi({
-            name: "Exit Strategy",
             desc: "Enter the exit zone",
             status: "",
             completed: this.isCompleted
         });
+    }
+
+    getRating(): ObjectiveReportData | undefined {
+        return undefined;
+    }
+
+    clear(): void {
+        this.sprite.destroy();
     }
 }

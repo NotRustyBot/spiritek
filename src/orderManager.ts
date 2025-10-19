@@ -70,6 +70,7 @@ export class AstronautOrder extends Order {
     constructor(astronaut: Astronaut) {
         super();
         this.astronaut = astronaut;
+        astronaut.enterShipIntent = false;
     }
 
     override cancel(): void {
@@ -199,6 +200,18 @@ export class AstronautGrabFlare extends AstronautOrder {
         });
     }
 
+    smartSwap(target: FlareCore) {
+        this.flare = target;
+        this.storedTarget = target.position.clone();
+        let inRange = this.astronaut.position.distance(this.flare) < 100;
+
+        if (inRange) {
+            this.execute();
+        } else {
+            this.executeAfterMove(100);
+        }
+    }
+
 
     execute(): void {
         this.astronaut.grabbedFlare = this.flare;
@@ -207,7 +220,7 @@ export class AstronautGrabFlare extends AstronautOrder {
     }
 }
 
-export class AstronautCollectItem extends AstronautOrder {
+export class AstronautPickupItem extends AstronautOrder {
     target?: CoreObject & IPickupable;
 
     constructor(astronaut: Astronaut) {
@@ -242,6 +255,18 @@ export class AstronautCollectItem extends AstronautOrder {
 
             return false;
         });
+    }
+
+    smartSwap(target: CoreObject & IPickupable) {
+        this.target = target;
+        this.storedTarget = target.position.clone();
+        let inRange = this.astronaut.position.distance(this.target) < 100;
+
+        if (inRange) {
+            this.execute();
+        } else {
+            this.executeAfterMove(50);
+        }
     }
 
 
@@ -335,9 +360,11 @@ export class AstronautMove extends AstronautOrder {
             this.sprite.rotation = this.orderTarget.diff(this.astronaut).toAngle();
 
             this.sprite.visible = true;
-            if (game.hovered && (game.hovered != game.ship && game.hovered != this.astronaut)) this.sprite.visible = false;
+            if (!game.hovered) this.sprite.visible = false;
 
             if (game.controls.pointerDown) {
+
+
                 if (game.hovered instanceof Drill) {
                     this.drillToOperate = game.hovered;
                     this.execute();
@@ -350,7 +377,28 @@ export class AstronautMove extends AstronautOrder {
                     return true;
                 }
 
-                if (game.hovered && (game.hovered != game.ship && game.hovered != this.astronaut)) return false;
+                if (game.hovered instanceof FlareCore) {
+                    const order = new AstronautGrabFlare(this.astronaut);
+                    order.smartSwap(game.hovered);
+                    this.destroy();
+                    return true;
+                }
+
+                if (game.hovered && game.hovered.tags.has("pickupable")) {
+                    const order = new AstronautPickupItem(this.astronaut);
+                    order.smartSwap(game.hovered as any);
+                    this.destroy();
+                    return true;
+                }
+
+                if (game.hovered && game.hovered.pickupProxy) {
+                    const order = new AstronautPickupItem(this.astronaut);
+                    order.smartSwap(game.hovered.pickupProxy as any);
+                    this.destroy();
+                    return true;
+                }
+
+                if (game.hovered) return false;
                 this.execute();
 
                 return true

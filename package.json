@@ -9,6 +9,7 @@
     "assets": "npx tsx bundler.ts"
   },
   "devDependencies": {
+    "less": "^4.4.2",
     "typescript": "~5.9.3",
     "vite": "^7.1.7"
   },

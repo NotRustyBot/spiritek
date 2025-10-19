@@ -1,11 +1,13 @@
+import { MissionReportData } from "../levelManager";
 import { createElement } from "../tsxFactory"
 import { Log, LogData } from "./log";
+import { MissionResults } from "./missionResults";
 import { Objectives, ObjectiveUiData, ObjectiveUiDataGetter } from "./objectives";
 import { ObjectOptions, ObjectOptionsData } from "./objectOptions"
 
 
 export class UiManager {
-    app: HTMLElement;
+
     get objectOptions(): HTMLElement {
         return document.getElementById("object-options")!;
     }
@@ -18,9 +20,12 @@ export class UiManager {
         return document.getElementById("log-list")!;
     }
 
-    constructor() {
-        document.body.appendChild(UI());
-        this.app = document.getElementById("app")!;
+    get app() {
+        return document.getElementById("app")!;
+    }
+
+    get missionResult() {
+        return document.getElementById("mission-result")!;
     }
 
     updateObjectOptions(objectOptions?: ObjectOptionsData) {
@@ -31,6 +36,8 @@ export class UiManager {
         this.objectives.replaceWith(Objectives({ data: objectiveOptions }));
     }
 
+
+
     addLog(logData: LogData) {
         this.logList.appendChild(Log(logData));
         let children = Array.from(this.logList.children);
@@ -40,6 +47,20 @@ export class UiManager {
             removeLog(child as HTMLElement);
         }
     }
+
+    clear() {
+        this.app?.remove();
+    }
+
+    readyGameUi() {
+        this.missionResult?.remove();
+        document.body.appendChild(UI());
+    }
+
+    readyReportUi(data: MissionReportData) {
+        document.body.appendChild(MissionResults(data));
+    }
+
 
 }
 

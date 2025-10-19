@@ -10,7 +10,7 @@ import { RangeRepeller } from "./repeller";
 import { Spirit } from "./spirit";
 import { ObjectOptionsData } from "./ui/objectOptions";
 import { itemDefinition, ItemType } from "./items";
-import { AstronautCollectItem, AstronautGrabFlare, AstronautMove, AstronautPlaceDrill, AstronautPlaceInstallation, AstronautThrowFlare, AstronautTossGrabbedFlare, Order, OrderManager } from "./orderManager";
+import { AstronautPickupItem, AstronautGrabFlare, AstronautMove, AstronautPlaceDrill, AstronautPlaceInstallation, AstronautThrowFlare, AstronautTossGrabbedFlare, Order, OrderManager } from "./orderManager";
 import { FlareCore, KillFlare, RepellFlare } from "./flare";
 import { SpotlightInstallation, TurretInstallation } from "./installation";
 import { Drill } from "./drill";
@@ -117,9 +117,9 @@ export class Astronaut extends CoreObject implements ISelectable {
             actions.push({
                 name: "Pick Up",
                 icon: "img/stone_1.png",
-                active: () => (game.orderManager.currentOrder instanceof AstronautCollectItem),
+                active: () => (game.orderManager.currentOrder instanceof AstronautPickupItem),
                 action: () => {
-                    const order = new AstronautCollectItem(this);
+                    const order = new AstronautPickupItem(this);
                     game.orderManager.newOrder(order);
                 },
             })
@@ -195,7 +195,6 @@ export class Astronaut extends CoreObject implements ISelectable {
         }
 
         this.orderQueue = [];
-        this.enterShipIntent = false;
     }
 
     queueOrder(order: Order) {
@@ -210,7 +209,7 @@ export class Astronaut extends CoreObject implements ISelectable {
     targetPosition = new Vector();
 
     constructor() {
-        super("updatable", "drawable", "astronaut", "selectable");
+        super("updatable", "drawable", "astronaut", "selectable", "scenebound");
         this.sprite = new Sprite(asset("astronaut"));
         this.sprite.anchor.set(0.5);
         game.containers.astronaut.addChild(this.sprite);

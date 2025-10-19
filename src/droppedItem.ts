@@ -23,7 +23,7 @@ export class DroppedItem extends CoreObject implements ISelectable, IPickupable 
     item: ItemType;
     count = 1;
     constructor(item: ItemType, count = 1) {
-        super("droppedItem", "drawable", "selectable", "pickupable");
+        super("droppedItem", "drawable", "selectable", "pickupable", "scenebound");
         this.count = count;
         this.item = item;
         this.sprite = new Sprite(asset(this.definition.icon));

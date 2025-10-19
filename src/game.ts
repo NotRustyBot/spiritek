@@ -6,7 +6,6 @@ import { Camera } from "./camera";
 import { ControlManager, MousePriority } from "./input";
 import { Ship } from "./ship";
 import { ISelectable } from "./types";
-import scene from "./scenes/objects.json"
 import { Astronaut } from "./astronaut";
 import { ObjectOptionsData } from "./ui/objectOptions";
 import { UiManager } from "./ui/UI";
@@ -21,6 +20,7 @@ import { ItemType } from "./items";
 import { Vectorlike } from "./vector";
 import { LogData } from "./ui/log";
 import { Random } from "random";
+import { LevelManager } from "./levelManager";
 
 export let game: Game;
 
@@ -28,11 +28,19 @@ export let game: Game;
 export class Game {
     app: Application;
 
+    pause = false
+
     get dtms(): number {
+        if (this.pause) return 0;
         return this.app.ticker.deltaMS;
     }
 
     get dt(): number {
+        if (this.pause) return 0;
+        return this.app.ticker.deltaMS / 1000;
+    }
+
+    get rawDt(): number {
         return this.app.ticker.deltaMS / 1000;
     }
 
@@ -60,6 +68,7 @@ export class Game {
         spirit: new Container(),
         overlay: new Container(),
         attention: new Container(),
+        transitionContainer: new Container(),
     }
 
     objects = new ObjectManager();
@@ -68,7 +77,9 @@ export class Game {
     camera: Camera;
     uiManager!: UiManager;
     orderManager!: OrderManager;
+    waveManager!: WaveManager;
     objectiveManager!: ObjectiveManager;
+    levelManager!: LevelManager;
     selected: ISelectable | undefined = undefined;
     hovered: ISelectable | undefined = undefined;
 
@@ -97,11 +108,11 @@ export class Game {
         console.log("init real");
         Lightmap.init();
         this.system = new System();
-        this.ship = new Ship();
         this.app.stage.addChild(this.containers.backdrop);
         this.app.stage.addChild(this.containers.underworld);
         this.app.stage.addChild(this.containers.screenLight);
         this.app.stage.addChild(this.containers.world);
+        this.app.stage.addChild(this.containers.transitionContainer);
         this.containers.underworld.addChild(this.containers.darkness);
         this.containers.world.addChild(this.containers.girder);
         this.containers.world.addChild(this.containers.ritual);
@@ -116,45 +127,34 @@ export class Game {
         this.containers.world.addChild(this.containers.overlay);
         this.containers.world.addChild(this.containers.attention);
 
-
         this.containers.light.filters = [new BlurFilter({})]
         this.containers.overlay.alpha = 0.25;
-
-
-        new WaveManager();
-
-        for (const obj of scene) {
-            if (obj.type == "asteroid") {
-                const stone = new Asteroid(obj.kind ?? "stone_1" as any, obj.rotation, obj.x, obj.y, obj.resource);
-            } else if (obj.type == "ship") {
-                this.ship.position.set(obj);
-                this.ship.rotation = obj.rotation ?? 0;
-                this.ship.targetPosition.set(obj);
-                this.ship.targetRotation = obj.rotation ?? 0;
-            }
-        }
 
         for (let index = 0; index < 100; index++) {
             this.dtHistory.push(16);
         }
 
         this.containers.world.scale.set(0.5);
+        game.waveManager = new WaveManager();
 
         this.uiManager = new UiManager();
         this.orderManager = new OrderManager();
         this.objectiveManager = new ObjectiveManager();
+        this.levelManager = new LevelManager();
 
         //TODO this is only temp
         let sprite = new Sprite(Lightmap.texture);
         this.containers.screenLight.addChild(sprite);
         sprite.filters = [new BlurFilter({})];
 
+        this.levelManager.loadLevel();
+
     }
 
 
     update() {
         this.debugGraphics.clear();
-        this.dtHistory.push(this.dtms);
+        this.dtHistory.push(this.app.ticker.deltaMS);
         this.dtHistory.unshift();
         this.avgDt = this.dtHistory.reduce((a, c) => { return a + c }) / this.dtHistory.length;
 
@@ -169,6 +169,14 @@ export class Game {
             let sprite = new Sprite(Lightmap.texture);
             this.app.stage.addChild(sprite);
             sprite.filters = [new BlurFilter({})];
+        }
+
+        if (this.controls.pressed["KeyP"]) {
+            game.pause = !game.pause;
+        }
+
+        if (this.controls.pressed["KeyO"]) {
+            game.levelManager.transition();
         }
 
         this.controls.requestMouse(MousePriority.select, () => {
@@ -204,7 +212,7 @@ export class Game {
         });
 
 
-        for (const obj of [...this.objects.getAll("updatable")]) {
+        for (const obj of this.objects.getAll("updatable")) {
             obj.update();
         }
 
@@ -280,6 +288,7 @@ export class Game {
         for (const obj of [...this.objects.getAll("scenebound")]) {
             obj.destroy();
         }
+        this.uiManager.clear();
     }
 }
 

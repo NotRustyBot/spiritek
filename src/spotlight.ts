@@ -39,7 +39,7 @@ export class Spotlight extends CoreObject implements ISelectable {
     pickupProxy?: IPickupable;
 
     constructor() {
-        super("updatable", "drawable", "selectable");
+        super("updatable", "drawable", "selectable", "scenebound");
         this.lightSprite = new Sprite(asset("floodlight"));
         this.lightSprite.anchor.set(0, 0.5);
         game.containers.light.addChild(this.lightSprite);

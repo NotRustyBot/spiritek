@@ -20,8 +20,6 @@ export class ObjectManager {
         for (const v of this.objects[key]!) {
             return v;
         }
-
-        throw new Error(key + " is not defined");
     }
 
     getAll<K extends keyof ObjectKinds>(key: K) {

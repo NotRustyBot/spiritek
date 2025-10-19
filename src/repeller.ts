@@ -25,7 +25,7 @@ export class RangeRepeller extends CoreObject implements IRepeller {
     noStrength = false;
     lineOfSight = false;
     constructor() {
-        super("repeller", "debug");
+        super("repeller", "debug", "scenebound");
     }
 
     check(pos: Vectorlike) {
@@ -54,7 +54,7 @@ export class PolygonRepeller extends CoreObject implements IRepeller {
     boxSize = 0;
     lineOfSight = false;
     constructor() {
-        super("repeller", "debug");
+        super("repeller", "debug", "scenebound");
     }
 
     setPolygon(polygon: Array<Vectorlike>) {

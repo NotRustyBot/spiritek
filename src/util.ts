@@ -53,7 +53,7 @@ export function angleInterpolate(current: number, target: number, step: number) 
     if (target - current <= step * 2) return target;
 
     if (target - current > Math.PI) return current - step;
-    return current + step;
+    return fixAngle(current + step);
 }
 
 export function angleDistance(current: number, target: number) {
@@ -62,7 +62,7 @@ export function angleDistance(current: number, target: number) {
     return target - current;
 }
 
-function fixAngle(angle: number) {
+export function fixAngle(angle: number) {
     angle = angle % (Math.PI * 2);
     if (angle < 0) angle += Math.PI * 2;
     return angle;

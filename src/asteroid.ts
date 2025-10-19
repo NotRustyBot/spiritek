@@ -29,7 +29,7 @@ export class Asteroid extends CoreObject {
     }
 
     constructor(stone: keyof typeof hitboxLookup, rotation = 0, x = 0, y = 0, resource = 0) {
-        super("asteroid", "shadowCaster");
+        super("asteroid", "shadowCaster", "scenebound");
 
         this.sprite = new Sprite(asset(stone));
         this.sprite.anchor.set(0.5);
@@ -74,5 +74,13 @@ export class Asteroid extends CoreObject {
             transform: this.sprite.worldTransform
         });
         this.sprite.tint = 0xffffff;
+    }
+
+    destroy(): void {
+        super.destroy();
+        this.sprite.destroy();
+        this.ore?.destroy();
+        this.repeller.destroy();
+        game.system.remove(this.collider);
     }
 }

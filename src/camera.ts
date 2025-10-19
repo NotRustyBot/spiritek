@@ -35,22 +35,20 @@ export class Camera extends CoreObject {
         super("Camera");
     }
 
-    update() {
-        const mouse = game.controls.mousePosition;
-        const thickness = 50;
-        const speed = 1000;
 
-        if (mouse.x < thickness) game.camera.x -= speed / this.zoom * game.dt;
-        if (mouse.x > this.width - thickness) game.camera.x += speed / this.zoom * game.dt;
-        if (mouse.y < thickness) game.camera.y -= speed / this.zoom * game.dt;
-        if (mouse.y > this.height - thickness) game.camera.y += speed / this.zoom * game.dt;
+    update() {
+        const speed = 1000 / this.zoom * game.rawDt;
+        if (game.controls.held["KeyD"]) this.position.x += speed;
+        if (game.controls.held["KeyA"]) this.position.x -= speed;
+        if (game.controls.held["KeyS"]) this.position.y += speed;
+        if (game.controls.held["KeyW"]) this.position.y -= speed;
 
         if (game.controls.wheel != 0) {
             let zoom = this.zoom * 1 + (-Math.sign(game.controls.wheel) / 10) * Math.abs(this.zoom);
             game.containers.world.scale.set(zoom);
         }
 
-        this.position.clampAxis(game.objects.getFirst("WaveManager").size);
+        this.position.clampAxis(game.objects.getFirst("WaveManager")?.size ?? 4000);
 
         game.containers.world.x = (-this.x * this.zoom + window.innerWidth / 2);
         game.containers.world.y = (-this.y * this.zoom + window.innerHeight / 2);

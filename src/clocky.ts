@@ -23,6 +23,7 @@ export class Clocky {
         } else {
             game.objects.remove("updatable", this);
         }
+        return this;
     }
 
     update() {

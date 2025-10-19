@@ -18,19 +18,19 @@ export class Spirit extends CoreObject {
     nodeUpdate = new Clocky(100);
 
     get direction() {
-        return this.waveManager.direction;
+        return game.waveManager.direction;
     }
     graphicNodes = new Array<Vector>();
     power = 2;
     fadeAway: Clocky;
 
     get waveManager() {
-        return game.objects.getFirst("WaveManager");
+        return game.objects.getFirst("WaveManager")!;
     }
 
 
     constructor() {
-        super("updatable", "drawable", "spirit");
+        super("updatable", "drawable", "spirit", "scenebound");
 
         const v = this.position.clone();
         for (let index = 0; index < 100; index++) {
@@ -123,8 +123,10 @@ export class Spirit extends CoreObject {
 
         this.position.add(this.velocity.clone().mult(game.dtms));
 
-        this.nodes.unshift(this.position.clone());
-        this.nodes.pop();
+        if(!game.pause){
+            this.nodes.unshift(this.position.clone());
+            this.nodes.pop();
+        }
     }
 
     repellerCheck(repeller: IRepeller) {

@@ -20,20 +20,20 @@ export class ControlManager {
     rightDown = false;
     wheel = 0;
     get worldMouse() {
-        const cam = game.objects.getFirst("Camera");
+        const cam = game.objects.getFirst("Camera")!;
         return this.mousePosition.clone().sub(cam.center).mult(1 / cam.zoom).add(cam);
     }
     constructor() {
         const element = game.app.canvas;
 
-        element.addEventListener("keydown", (k) => {
+        document.addEventListener("keydown", (k) => {
             console.log(k.code);
 
             this.pressed[k.code] = true;
             this.held[k.code] = true;
         });
 
-        element.addEventListener("keyup", (k) => {
+        document.addEventListener("keyup", (k) => {
             this.released[k.code] = true;
             delete this.held[k.code];
         });

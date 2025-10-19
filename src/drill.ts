@@ -40,7 +40,7 @@ export class Drill extends CoreObject implements ISelectable {
     }
 
     constructor(asteroid: Asteroid, installation: Installation) {
-        super("updatable", "drawable", "selectable",);
+        super("updatable", "drawable", "selectable", "scenebound");
         this.sprite = new Sprite(asset("drill"));
         this.sprite.anchor.set(0.5);
         game.containers.items.addChild(this.sprite);

@@ -21,30 +21,25 @@ export class WaveManager extends CoreObject {
     background: Sprite;
     light: Sprite;
 
-    clocky: Clocky;
     constructor() {
-        super("updatable", "WaveManager");
+        super("updatable", "WaveManager", "scenebound");
         this.background = new Sprite(asset("noisy-sqare"));
         game.containers.backdrop.addChild(this.background);
         this.light = new Sprite(asset("blurcircle"));
         this.light.anchor.set(0.5);
         this.light.scale.set(this.size / 350);
-        this.clocky = Clocky.sequence([
-            { time: 120 },
-            { time: 100, during: () => { this.spawnClocky.limit = (1 - this.clocky.progress) * 0.5 + 0.5 } }, 
-            { time: 60 },
-            { time: 20, during: () => { this.spawnClocky.limit = (this.clocky.progress) * 0.5 + 0.5 } },
-            { time: 40, during: () => { this.spawnClocky.limit = (1 - this.clocky.progress) * 0.9 + 0.1 } },
-        ]);
     }
 
     update() {
         this.spawnClocky.check() && new Spirit().update();
-        this.clocky.check();
         this.direction.set(Vector.fromAngle(this.angle)).mult(this.speed);
         this.background.width = game.camera.width;
         this.background.height = game.camera.height;
         this.background.tint = interpolateColors(0x202830, 0x010408, clamp(1 - this.spawnClocky.limit, 0, 1));
+    }
 
+    destroy(): void {
+        super.destroy();
+        this.background.destroy();
     }
 }

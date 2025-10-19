@@ -35,7 +35,7 @@ export class Turret extends CoreObject implements ISelectable {
     pickupProxy?: IPickupable;
 
     constructor() {
-        super("updatable", "drawable", "selectable", "debug");
+        super("updatable", "drawable", "selectable", "debug", "scenebound");
         this.sprite = new Sprite(asset("turret"));
         this.sprite.anchor.set(0.5);
         game.containers.items.addChild(this.sprite);
@@ -88,11 +88,12 @@ export class Turret extends CoreObject implements ISelectable {
 
             let nearest = undefined as Spirit | undefined;
             let dist = this.range;
+            let health = Infinity;
             for (const spirit of Array.from(game.objects.getAll("spirit"))) {
                 if (spirit.power <= 1) continue;
                 let cdist = spirit.position.distance(this);
                 if (cdist < dist) {
-                    if (!game.system.raycast(this, spirit)) {
+                    if (spirit.power <= health && !game.system.raycast(this, spirit)) {
                         dist = cdist;
                         nearest = spirit;
                     }
@@ -168,5 +169,7 @@ export class Turret extends CoreObject implements ISelectable {
     override destroy(): void {
         super.destroy();
         this.sprite.destroy();
+        this.muzzleGlow.destroy();
+        this.muzzle.destroy();
     }
 }

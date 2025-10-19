@@ -12,7 +12,7 @@ export class Ritual extends CoreObject {
     repeller = new RangeRepeller();
     sprite: Sprite;
     constructor(data: Array<ClockyData>) {
-        super("updatable", "drawable")
+        super("updatable", "drawable", "scenebound")
         this.clocky = Clocky.sequence(data);
         this.sprite = new Sprite(asset("ritual"));
         game.containers.ritual.addChild(this.sprite);

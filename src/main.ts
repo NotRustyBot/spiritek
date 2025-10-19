@@ -1,5 +1,5 @@
 import { Application, Assets } from 'pixi.js';
-import './style.css'
+import './style.less'
 import { Game } from './game';
 import bundle from './bundle';
 

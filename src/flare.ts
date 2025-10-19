@@ -39,7 +39,7 @@ export class FlareCore extends CoreObject implements ISelectable {
     get range() { return 500 };
     color = 0xffff00;
     constructor(position: Vectorlike) {
-        super("updatable", "drawable", "selectable");
+        super("updatable", "drawable", "selectable", "scenebound");
         this.sprite = new Sprite(asset("flare"));
         game.containers.items.addChild(this.sprite);
 
