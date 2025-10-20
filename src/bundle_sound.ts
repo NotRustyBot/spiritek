@@ -13,48 +13,28 @@ const bundle_sound = {
       src: "./audio/music/crystalEchoes.ogg"
     },
     {
-      alias: "music-crystalEchoes",
-      src: "./audio/music/crystalEchoes.wav"
-    },
-    {
       alias: "music-darkPlanet",
       src: "./audio/music/darkPlanet.ogg"
-    },
-    {
-      alias: "music-darkPlanet",
-      src: "./audio/music/darkPlanet.wav"
     },
     {
       alias: "music-fog",
       src: "./audio/music/fog.ogg"
     },
     {
-      alias: "music-fog",
-      src: "./audio/music/fog.wav"
-    },
-    {
       alias: "music-labyrinth",
       src: "./audio/music/labyrinth.ogg"
     },
     {
-      alias: "music-labyrinth",
-      src: "./audio/music/labyrinth.wav"
+      alias: "music-mayak",
+      src: "./audio/music/mayak.ogg"
     },
     {
       alias: "music-nowYouAre",
       src: "./audio/music/nowYouAre.ogg"
     },
     {
-      alias: "music-nowYouAre",
-      src: "./audio/music/nowYouAre.wav"
-    },
-    {
       alias: "music-wolf",
       src: "./audio/music/wolf.ogg"
-    },
-    {
-      alias: "music-wolf",
-      src: "./audio/music/wolf.wav"
     },
     {
       alias: "voice-e_getout",

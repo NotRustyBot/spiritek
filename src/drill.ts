@@ -96,5 +96,6 @@ export class Drill extends CoreObject implements ISelectable {
     destroy(): void {
         super.destroy();
         this.sprite.destroy();
+        this.asteroid.drill = undefined
     }
 }

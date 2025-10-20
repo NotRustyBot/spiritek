@@ -1,18 +1,19 @@
-import { Assets, Sprite, TilingSprite } from "pixi.js";
+import { Sprite, TilingSprite } from "pixi.js";
 import { Astronaut } from "./astronaut";
 import { CoreObject } from "./core";
-import { FlareCore, KillFlare, RepellFlare } from "./flare";
+import { FlareCore } from "./flare";
 import { game } from "./game";
 import { MousePriority } from "./input";
-import { asset, toNearest } from "./util";
+import { asset } from "./util";
 import { ItemType } from "./items";
-import { DrillInstallation, Installation, SpotlightInstallation } from "./installation";
+import { DrillInstallation, Installation } from "./installation";
 import { Spotlight } from "./spotlight";
 import { Drill } from "./drill";
 import { Asteroid } from "./asteroid";
 import { Vector } from "./vector";
 import { IPickupable } from "./droppedItem";
 import { Ship } from "./ship";
+import { Clocky } from "./clocky";
 
 export class OrderManager extends CoreObject {
     orders = new Set<Order>();
@@ -220,6 +221,59 @@ export class AstronautGrabFlare extends AstronautOrder {
     }
 }
 
+
+export class AstronautRevive extends AstronautOrder {
+    target?: Astronaut;
+
+    constructor(astronaut: Astronaut) {
+        super(astronaut);
+        this.astronaut = astronaut;
+        astronaut.cancelOrders();
+    }
+
+    override plan() {
+        game.controls.requestMouse(MousePriority.selectOrderTarget, () => {
+
+            if (game.hovered instanceof Astronaut && game.hovered != this.astronaut) {
+                this.target = game.hovered;
+            } else {
+                return false;
+            }
+
+            let inRange = this.astronaut.position.distance(this.target) < 50;
+
+            if (game.controls.clicked) {
+                if (inRange) {
+                    this.execute();
+                } else {
+                    this.executeAfterMove(50);
+                }
+            }
+        });
+    }
+
+    smartSwap(target: Astronaut) {
+        this.target = target;
+        this.storedTarget = target.position.clone();
+        let inRange = this.astronaut.position.distance(this.target) < 50;
+
+        if (inRange) {
+            this.execute();
+        } else {
+            this.executeAfterMove(50);
+        }
+    }
+
+
+    execute(): void {
+        if (this.target) {
+            this.target.incapacitated = false;
+            this.target.resist = 10;
+        }
+        this.destroy();
+    }
+}
+
 export class AstronautPickupItem extends AstronautOrder {
     target?: CoreObject & IPickupable;
 
@@ -246,6 +300,8 @@ export class AstronautPickupItem extends AstronautOrder {
 
             if (game.controls.clicked) {
                 if (inRange) {
+                    game.controls.clicked = false;
+                    game.controls.pointerDown = false;
                     this.execute();
                 } else {
                     this.executeAfterMove(50);
@@ -278,6 +334,8 @@ export class AstronautPickupItem extends AstronautOrder {
             game.log("Item no longer available", this.astronaut, "warn");
         }
         this.destroy();
+
+        Clocky.once(0.1).autoTick().tick = () => { if (this.astronaut == game.selected) this.astronaut.select() };
     }
 }
 
@@ -362,7 +420,7 @@ export class AstronautMove extends AstronautOrder {
             this.sprite.visible = true;
             if (!game.hovered) this.sprite.visible = false;
 
-            if (game.controls.pointerDown) {
+            if (game.controls.rightDown) {
 
 
                 if (game.hovered instanceof Drill) {
@@ -374,6 +432,13 @@ export class AstronautMove extends AstronautOrder {
                 if (game.hovered instanceof Ship) {
                     this.astronaut.enterShipIntent = true;
                     this.execute();
+                    return true;
+                }
+
+                if (game.hovered instanceof Astronaut && game.hovered != this.astronaut) {
+                    const order = new AstronautRevive(this.astronaut);
+                    order.smartSwap(game.hovered);
+                    this.destroy();
                     return true;
                 }
 
@@ -405,7 +470,7 @@ export class AstronautMove extends AstronautOrder {
             }
 
             return false;
-        });
+        }, this);
     }
 
     execute(): void {
@@ -427,6 +492,7 @@ export class AstronautMove extends AstronautOrder {
     override destroy(): void {
         super.destroy();
         this.sprite.destroy();
+        game.controls.cancelMouseRequest(this);
     }
 }
 
@@ -621,7 +687,7 @@ export class TranslateTo extends Order {
 
 export class MoveTo extends Order {
     override plan() {
-        game.controls.requestPointerDown(MousePriority.selectOrderTarget, () => {
+        game.controls.requestRightPointerDown(MousePriority.selectOrderTarget, () => {
             if (game.hovered && game.hovered != game.ship) return false;
             game.ship.targetPosition.set(this.orderTarget);
             game.ship.targetRotation = this.orderTarget.diff(game.ship).toAngle();
@@ -701,7 +767,7 @@ export class SpotlightTarget extends Order {
         this.spotlight = spotlight;
     }
     override plan() {
-        game.controls.requestPointerDown(MousePriority.order, () => {
+        game.controls.requestRightPointerDown(MousePriority.order, () => {
             this.spotlight.targetPosition.set(this.orderTarget.clone());
         })
     }

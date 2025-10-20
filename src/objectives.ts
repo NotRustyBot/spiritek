@@ -80,7 +80,7 @@ export class RecoverMiningEquipment extends Objective {
     target = 2;
     update(): void {
         let count = game.ship.itemCount(ItemType.DrillParts);
-        if (count >= this.target) this.isCompleted = true;
+        this.isCompleted = count >= this.target;
         this.updateUi({
             desc: "Bring mining equipment back to the ship",
             status: count + " / " + this.target,
@@ -103,7 +103,7 @@ export class CrewOnBoard extends Objective {
     target = 3;
     update(): void {
         let count = game.ship.astronauts;
-        if (count >= this.target) this.isCompleted = true;
+        this.isCompleted = count >= this.target;
         this.updateUi({
             desc: "Have astronauts on board",
             status: count + " / " + this.target,

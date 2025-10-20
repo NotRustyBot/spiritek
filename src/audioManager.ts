@@ -12,4 +12,12 @@ export class AudioManager {
         this.currentMusic = newMusic;
         return newMusic;
     }
+
+
+
+    voiceline(voice: Bundle_soundAliases) {
+        const newVoice = new Howl({ src: Array.from(bundle_sound.assets).find(f => f.alias == voice)!.src });
+        newVoice.play();
+        return newVoice;
+    }
 }

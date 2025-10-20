@@ -1,8 +1,8 @@
 import { OutlineFilter } from "pixi-filters";
-import { AnimatedSprite, Sprite } from "pixi.js";
+import { AnimatedSprite, Graphics, Sprite } from "pixi.js";
 import { Clocky } from "./clocky";
 import { CoreObject } from "./core";
-import { game } from "./game";
+import { rangeSettings, game } from "./game";
 import { PolygonRepeller } from "./repeller";
 import { Spirit } from "./spirit";
 import { ISelectable } from "./types";
@@ -18,6 +18,9 @@ export class Turret extends CoreObject implements ISelectable {
     sprite: Sprite;
     muzzle: AnimatedSprite;
     muzzleGlow: Sprite;
+
+    graphics = new Graphics();
+
 
     size = 100; // selectable
 
@@ -39,6 +42,7 @@ export class Turret extends CoreObject implements ISelectable {
         this.sprite = new Sprite(asset("turret"));
         this.sprite.anchor.set(0.5);
         game.containers.items.addChild(this.sprite);
+        game.containers.rangeOverlay.addChild(this.graphics);
 
         this.muzzleGlow = new Sprite(asset("light"));
         this.muzzleGlow.anchor.set(0.5);
@@ -66,6 +70,8 @@ export class Turret extends CoreObject implements ISelectable {
         };
 
         this.muzzleTime.stop = true;
+
+        this.updateRanges();
     }
 
     hover() {
@@ -128,6 +134,12 @@ export class Turret extends CoreObject implements ISelectable {
         }
     }
 
+    updateRanges() {
+        this.graphics.clear();
+        this.graphics.circle(0, 0, this.range);
+        this.graphics.stroke({color: rangeSettings.kill, width: rangeSettings.width / game.camera.zoom });
+    }
+
     debug() {
         let dist = this.range;
         for (const spirit of Array.from(game.objects.getAll("spirit"))) {
@@ -158,12 +170,16 @@ export class Turret extends CoreObject implements ISelectable {
     draw() {
         this.sprite.position.set(this.x, this.y);
         this.muzzle.position.set(this.x, this.y);
+        this.graphics.position.set(this.x, this.y);
         this.muzzleGlow.position.set(this.x, this.y);
 
 
         if (this.aimAngle != this.sprite.rotation) {
             this.sprite.rotation = angleInterpolate(this.sprite.rotation, this.aimAngle, game.dt * 10);
         }
+
+        this.graphics.visible = (game.hovered == this || game.selected == this);
+
     }
 
     override destroy(): void {
@@ -171,5 +187,7 @@ export class Turret extends CoreObject implements ISelectable {
         this.sprite.destroy();
         this.muzzleGlow.destroy();
         this.muzzle.destroy();
+        this.graphics.destroy();
+
     }
 }

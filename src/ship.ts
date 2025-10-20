@@ -1,9 +1,9 @@
 import { CoreObject } from "./core";
-import { game } from "./game";
+import { game, rangeSettings } from "./game";
 import { AttractFlare, KillFlare, RepellFlare } from "./flare";
 import { ShipFloodlight, ShipModule, ShipTurret } from "./shipModule";
 import { Spotlight } from "./spotlight";
-import { Sprite } from "pixi.js";
+import { Graphics, Sprite } from "pixi.js";
 import { angleDistance, angleInterpolate, asset, fixAngle, rotate, toNearest } from "./util";
 import { PolygonRepeller, RangeRepeller } from "./repeller";
 import shipHitbox from "./hitbox/ship.json";
@@ -36,6 +36,8 @@ export class Ship extends CoreObject implements ISelectable {
 
     attention: AttentionIcon;
 
+    graphics = new Graphics();
+
     astronauts = 3;
 
     resist = 250;
@@ -46,15 +48,6 @@ export class Ship extends CoreObject implements ISelectable {
 
     get uiData(): ObjectOptionsData {
         const actions: ObjectOptionsData["actions"] = new Array();
-        actions.push({
-            name: "Move",
-            icon: "img/ship.png",
-            active: () => (game.orderManager.currentOrder instanceof MoveTo),
-            action: () => {
-                const order = new MoveTo();
-                game.orderManager.newOrder(order);
-            }
-        });
 
         actions.push({
             name: "Translate",
@@ -147,6 +140,8 @@ export class Ship extends CoreObject implements ISelectable {
         game.containers.ship.addChild(this.sprite);
         this.sprite.anchor.set(0.5);
 
+        game.containers.rangeOverlay.addChild(this.graphics);
+
         this.attention = new AttentionIcon();
         this.attention.setIcon("icon-Icon_Warning");
 
@@ -160,6 +155,9 @@ export class Ship extends CoreObject implements ISelectable {
         this.attractor.emotional = true;
         this.attractor.strength = -1;
 
+        this.graphics.circle(0, 0, 1800);
+        this.graphics.stroke({ color: rangeSettings.attract, width: rangeSettings.width / game.camera.zoom });
+
         this.repeller = new PolygonRepeller();
         this.repeller.setPolygon(shipHitbox);
         this.repeller.hit = (spirit: Spirit) => {
@@ -171,6 +169,7 @@ export class Ship extends CoreObject implements ISelectable {
 
         this.turret = new ShipTurret({ x: 300, y: 0 }, this);
         this.turret.turret.range = 1500;
+        this.turret.turret.updateRanges();
 
         this.spotlightL.spotlight.targetPosition.set(-1000, 500);
         this.spotlightR.spotlight.targetPosition.set(-1000, -500);
@@ -293,9 +292,14 @@ export class Ship extends CoreObject implements ISelectable {
         this.sprite.position.set(this.x, this.y);
         this.sprite.rotation = this.rotation;
         this.attention.forPosition(this, this.size);
+        this.graphics.position.set(this.x, this.y);
+
 
         this.overlaySprite.position.set(this.targetPosition.x, this.targetPosition.y);
         this.overlaySprite.rotation = this.targetRotation;
+
+        this.graphics.visible = (game.hovered == this || game.selected == this);
+
     }
 
     destroy(): void {
@@ -305,6 +309,7 @@ export class Ship extends CoreObject implements ISelectable {
         this.attractor.destroy();
         this.overlaySprite.destroy();
         this.attention.destroy();
+        this.graphics.destroy();
     }
 }
 

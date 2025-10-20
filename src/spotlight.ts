@@ -1,7 +1,7 @@
-import { Sprite } from "pixi.js";
+import { Graphics, Sprite } from "pixi.js";
 import { Clocky } from "./clocky";
 import { CoreObject } from "./core";
-import { game } from "./game";
+import { rangeSettings, game } from "./game";
 import { PolygonRepeller } from "./repeller";
 import { Spirit } from "./spirit";
 import { ISelectable } from "./types";
@@ -20,6 +20,8 @@ export class Spotlight extends CoreObject implements ISelectable {
     repeller: PolygonRepeller;
     lightSprite: Sprite;
     sprite: Sprite;
+
+    graphics = new Graphics();
 
     size = 100; // selectable
 
@@ -46,6 +48,9 @@ export class Spotlight extends CoreObject implements ISelectable {
         this.sprite = new Sprite(asset("spotlight"));
         this.sprite.anchor.set(0.5);
         game.containers.items.addChild(this.sprite);
+
+        game.containers.rangeOverlay.addChild(this.graphics);
+
         this.repeller = new PolygonRepeller();
         this.polygon = [
             {
@@ -70,6 +75,9 @@ export class Spotlight extends CoreObject implements ISelectable {
         this.repeller.setPolygon(this.polygon);
         this.lightSprite.scale.set(scale / 127);
 
+        this.graphics.poly(this.polygon);
+        this.graphics.stroke({color: rangeSettings.repel, width: rangeSettings.width / game.camera.zoom });
+
         this.repeller.noStrength = true;
         this.repeller.lineOfSight = true;
 
@@ -83,7 +91,7 @@ export class Spotlight extends CoreObject implements ISelectable {
 
             s.affect(-power, this);
         };
-        this.light = new Light({ position: this.position, range: 2000,width:.6, intensity: 0.7, color: new CustomColor(255, 250, 245) });
+        this.light = new Light({ position: this.position, range: 2000, width: .6, intensity: 0.7, color: new CustomColor(255, 250, 245) });
     }
 
     select(): void {
@@ -98,17 +106,18 @@ export class Spotlight extends CoreObject implements ISelectable {
         Common.unhover(this, this.sprite);
     }
 
+    targetAngle = 0;
     update() {
-        let targetAngle = this.targetPosition.diff(this.position).toAngle();
+        this.targetAngle = this.targetPosition.diff(this.position).toAngle();
 
         if (this.confused) {
-            targetAngle = Math.sin(game.time / 6 + this.position.x) * 6;
+            this.targetAngle = Math.sin(game.time / 6 + this.position.x) * 6;
         } else {
             this.repeller.strength += game.dt;
         }
 
-        if (this.aimAngle != targetAngle) {
-            this.aimAngle = angleInterpolate(this.aimAngle, targetAngle, game.dt);
+        if (this.aimAngle != this.targetAngle) {
+            this.aimAngle = angleInterpolate(this.aimAngle, this.targetAngle, game.dt);
             this.repeller.setPolygon(rotate(this.polygon, this.aimAngle));
         }
 
@@ -119,13 +128,6 @@ export class Spotlight extends CoreObject implements ISelectable {
         this.light.position.set(this);
         this.light.angle = this.aimAngle;
 
-
-        if (game.selected == this) {
-            game.controls.requestPointerDown(MousePriority.order, () => {
-                this.targetPosition.set(game.controls.worldMouse.clone());
-            })
-        }
-
     }
 
     blinker = new Clocky(0.05);
@@ -133,14 +135,20 @@ export class Spotlight extends CoreObject implements ISelectable {
     draw() {
         this.lightSprite.position.set(this.repeller.x, this.repeller.y);
         this.sprite.position.set(this.repeller.x, this.repeller.y);
+        this.graphics.position.set(this.repeller.x, this.repeller.y);
         if (this.blinker.check()) {
             this.lightSprite.alpha = 0.2 * (1 + (1 - this.repeller.strength) * Math.random()) * this.repeller.strength;
             this.light.intensity = this.lightSprite.alpha * 3;
             this.lightSprite.alpha = 0;
 
         }
+
+        this.graphics.visible = (game.hovered == this || game.selected == this);
+
         this.lightSprite.rotation = this.aimAngle;
         this.sprite.rotation = this.aimAngle;
+        this.graphics.rotation = this.targetAngle;
+
     }
 
     override destroy(): void {
@@ -149,5 +157,6 @@ export class Spotlight extends CoreObject implements ISelectable {
         this.lightSprite.destroy();
         this.sprite.destroy();
         this.light.remove();
+        this.graphics.destroy();
     }
 }

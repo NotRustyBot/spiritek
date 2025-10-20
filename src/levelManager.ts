@@ -2,7 +2,8 @@ import { game } from "./game";
 import { Ship } from "./ship";
 import { WaveManager } from "./waveManager";
 import tutorial from "./scenes/tutorial.json"
-import lvl1 from "./scenes/objects.json"
+import lvl1 from "./scenes/lvl1.json"
+import lvl2 from "./scenes/objects.json"
 import { Asteroid } from "./asteroid";
 import { ItemType } from "./items";
 import { Vector } from "./vector";
@@ -118,7 +119,11 @@ export class LevelManager extends CoreObject {
     }
 }
 
-class Level {
+class Level extends CoreObject {
+    constructor() {
+        super("scenebound");
+    }
+
     get sceneData() {
         return tutorial;
     }
@@ -143,6 +148,7 @@ class Level {
 
 
 class TutorialLevel extends Level {
+    sprite!: Sprite;
     override load(): void {
         super.load();
 
@@ -161,6 +167,17 @@ class TutorialLevel extends Level {
         game.waveManager.spawnClocky.limit = 3;
         game.audioManager.music("music-crystalEchoes");
 
+        this.sprite = new Sprite(asset("tutorial"));
+        game.containers.overlay.addChild(this.sprite);
+        this.sprite.anchor.set(0.5);
+        this.sprite.position.set(-700, 80);
+        this.sprite.scale.set(6);
+        this.sprite.visible = false;
+
+        Clocky.once(3).autoTick().tick = () => {
+            game.audioManager.voiceline("voice-s_look");
+            this.sprite.visible = true;
+        };
     }
 
     wasDrillDeployed = false;
@@ -181,10 +198,15 @@ class TutorialLevel extends Level {
 
         }
     }
+
+    destroy(): void {
+        super.destroy();
+        this.sprite.destroy();
+    }
 }
 
 class Level1 extends Level {
-
+    clocky!: Clocky;
     override get sceneData(): any {
         return lvl1;
     }
@@ -199,7 +221,7 @@ class Level1 extends Level {
 
         const activeObjectives = [];
         const mo = new MiningObjective();
-        mo.target = 300;
+        mo.target = 200;
         activeObjectives.push(mo);
         activeObjectives.push(new RecoverMiningEquipment());
         activeObjectives.push(new CrewOnBoard());
@@ -208,23 +230,39 @@ class Level1 extends Level {
         game.objectiveManager.init(activeObjectives);
 
         game.waveManager.spawnClocky.limit = 3;
-        const clocky = Clocky.sequence([
-            { time: 30 },
+        this.clocky = Clocky.sequence([
             {
-                time: 30, during: () => {
-                    game.waveManager.spawnClocky.limit = 0.5 + 2.5 * (1 - clocky.progress)
+                time: 60,
+                tick: () => {
+                    game.audioManager.voiceline("voice-s_presence")
                 }
             },
-            { time: 60 },
             {
                 time: 30, during: () => {
-                    game.waveManager.spawnClocky.limit = 0.25 + 0.25 * (1 - clocky.progress)
+                    game.waveManager.spawnClocky.limit = 0.5 + 2.5 * (1 - this.clocky.progress)
                 }
             },
-            { time: 60 },
+            {
+                time: 60,
+                tick: () => {
+                    game.audioManager.voiceline("voice-e_more")
+
+                }
+            },
             {
                 time: 30, during: () => {
-                    game.waveManager.spawnClocky.limit = 0.1 + 0.15 * (1 - clocky.progress)
+                    game.waveManager.spawnClocky.limit = 0.25 + 0.25 * (1 - this.clocky.progress)
+                }
+            },
+            {
+                time: 60,
+                tick: () => {
+                    game.audioManager.voiceline("voice-s_overstay")
+                }
+            },
+            {
+                time: 30, during: () => {
+                    game.waveManager.spawnClocky.limit = 0.1 + 0.15 * (1 - this.clocky.progress)
                 }
             },
         ]).autoTick();
@@ -235,9 +273,111 @@ class Level1 extends Level {
 
     update(): void {
     }
+
+    destroy(): void {
+        super.destroy();
+        this.clocky.stop = true;
+    }
+}
+
+class Level2 extends Level {
+    clocky!: Clocky;
+    override get sceneData(): any {
+        return lvl2;
+    }
+
+    override load(): void {
+        super.load();
+
+        game.ship.pickup({ item: ItemType.DrillParts, count: 2 });
+        game.ship.pickup({ item: ItemType.KillFlare, count: 3 });
+        game.ship.pickup({ item: ItemType.RepellFlare, count: 6 });
+        game.ship.pickup({ item: ItemType.ConstructionParts, count: 5 });
+
+        const activeObjectives = [];
+        const mo = new MiningObjective();
+        mo.target = 200;
+        activeObjectives.push(mo);
+        activeObjectives.push(new RecoverMiningEquipment());
+        activeObjectives.push(new CrewOnBoard());
+        activeObjectives.push(new ExitStrategy());
+
+        game.objectiveManager.init(activeObjectives);
+
+        game.waveManager.spawnClocky.limit = 3;
+        this.clocky = Clocky.sequence([
+            {
+                time: 60,
+                tick: () => {
+                    game.audioManager.voiceline("voice-s_presence")
+                }
+            },
+            {
+                time: 10, during: () => {
+                    game.waveManager.spawnClocky.limit = 0.5 + 2.5 * (1 - this.clocky.progress)
+                }
+            },
+            {
+                time: 30,
+                tick: () => {
+                    game.audioManager.voiceline("voice-s_shifting1")
+
+                }
+            },
+            {
+                time: 15, during: () => {
+                    game.waveManager.angle = this.clocky.progress;
+                },
+                tick: () => {
+                    game.audioManager.voiceline("voice-e_more")
+
+                }
+            },
+            {
+                time: 10, during: () => {
+                    game.waveManager.spawnClocky.limit = 0.25 + 0.25 * (1 - this.clocky.progress)
+                }
+            },
+            {
+                time: 60,
+                tick: () => {
+                    game.audioManager.voiceline("voice-s_shifting2")
+
+                }
+            },
+            {
+                time: 15, during: () => {
+                    game.waveManager.angle = 1 - this.clocky.progress;
+                }
+            },
+            {
+                time: 60,
+                tick: () => {
+                    game.audioManager.voiceline("voice-s_overstay")
+                }
+            },
+            {
+                time: 30, during: () => {
+                    game.waveManager.spawnClocky.limit = 0.1 + 0.15 * (1 - this.clocky.progress)
+                }
+            },
+        ]).autoTick();
+
+        game.audioManager.music("music-labyrinth");
+    }
+
+
+    update(): void {
+    }
+
+    destroy(): void {
+        super.destroy();
+        this.clocky.stop = true;
+    }
 }
 
 const levels = [
     TutorialLevel,
-    Level1
+    Level1,
+    Level2,
 ]

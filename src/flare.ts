@@ -6,17 +6,13 @@ import { Clocky } from "./clocky";
 import { game } from "./game";
 import { Spirit } from "./spirit";
 import { ISelectable } from "./types";
-import { OutlineFilter } from "pixi-filters";
 import { Common } from "./common";
-import { Light } from "./lighting/light";
 import { Vector, Vectorlike } from "./vector";
-import { CustomColor } from "./lighting/color";
 import { Astronaut } from "./astronaut";
 
 export class FlareCore extends CoreObject implements ISelectable {
     sprite: Sprite;
     glow: Sprite;
-    light: Light;
     repeller = new RangeRepeller();
     grabbedBy?: Astronaut;
 
@@ -64,8 +60,6 @@ export class FlareCore extends CoreObject implements ISelectable {
             }
         ]);
 
-        this.light = new Light({ position: new Vector(this.x, this.y), range: this.range / 2, color: CustomColor.fromPixi(this.color), intensity: 1, width: 4 });
-
         this.update();
     }
 
@@ -98,12 +92,6 @@ export class FlareCore extends CoreObject implements ISelectable {
         this.glow.tint = interpolateColors(0x111111, this.color, this.strength);
         this.glow.alpha = this.strength * 0.2;
 
-        this.light.position.set(this.x, this.y);
-        this.light.color = CustomColor.fromPixi(this.color);
-        this.light.intensity = this.strength * .3;
-        this.light.angle = this.sprite.rotation;
-        this.glow.alpha = 0;
-
         this.sprite.rotation = this.position.x / 100;
 
         this.repeller.range = this.strength * this.range;
@@ -115,8 +103,8 @@ export class FlareCore extends CoreObject implements ISelectable {
     destroy(): void {
         super.destroy();
         this.sprite.destroy();
-        this.light.remove();
         this.repeller.destroy();
+        this.glow.destroy();
         if (this.grabbedBy) this.grabbedBy.grabbedFlare = undefined;
         this.grabbedBy = undefined;
     }

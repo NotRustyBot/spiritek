@@ -31,8 +31,14 @@ export function Objectives(props: { data: Array<ObjectiveUiDataGetter> }) {
                     d.dataGetter(v => {
                         desc.innerHTML = v.desc;
                         status.innerHTML = v.status;
-                        if(v.completed) item.classList.add("completed");
-                        if(v.locked) item.classList.add("locked");
+
+                        if (v.completed) {
+                            item.classList.add("completed");
+                        } else {
+                            item.classList.remove("completed");
+                        }
+
+                        if (v.locked) item.classList.add("locked");
                     })
 
                     return elements;

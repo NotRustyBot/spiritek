@@ -29,7 +29,7 @@ export class UiManager {
     }
 
     updateObjectOptions(objectOptions?: ObjectOptionsData) {
-        this.objectOptions.replaceWith(ObjectOptions(objectOptions));
+        if (this.objectOptions) this.objectOptions.replaceWith(ObjectOptions(objectOptions));
     }
 
     updateObjectives(objectiveOptions: Array<ObjectiveUiDataGetter>) {

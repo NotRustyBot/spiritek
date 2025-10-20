@@ -2,7 +2,7 @@ import { Sprite, TilingSprite } from "pixi.js";
 import { Asteroid } from "./asteroid";
 import { Vectorlike } from "./vector";
 import { CoreObject } from "./core";
-import { game } from "./game";
+import { rangeSettings, game } from "./game";
 import { asset } from "./util";
 import { Turret } from "./turret";
 import { RangeRepeller } from "./repeller";
@@ -64,6 +64,7 @@ export class Installation extends CoreObject {
     override destroy(): void {
         super.destroy();
         this.girder?.destroy();
+        this.attractor.destroy();
     }
 
 }
@@ -74,6 +75,8 @@ export class TurretInstallation extends Installation implements IPickupable {
     constructor(position: Vectorlike, asteroid: Asteroid) {
         super(position, asteroid);
         this.turret.pickupProxy = this;
+        this.turret.graphics.circle(0, 0, this.attractor.range);
+        this.turret.graphics.stroke({color: rangeSettings.attract, width: rangeSettings.width / game.camera.zoom });
     }
 
     pickup(): void {
@@ -108,6 +111,8 @@ export class SpotlightInstallation extends Installation {
     constructor(position: Vectorlike, asteroid: Asteroid) {
         super(position, asteroid);
         this.spotlight.pickupProxy = this;
+        this.spotlight.graphics.circle(0, 0, this.attractor.range);
+        this.spotlight.graphics.stroke({color: rangeSettings.attract, width: rangeSettings.width / game.camera.zoom });
     }
 
     override update(): void {

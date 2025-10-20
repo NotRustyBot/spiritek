@@ -85,8 +85,15 @@ export class ControlManager {
         }, cr)
     }
 
+    requestRightPointerDown(priority: MousePriority, action: () => boolean | void, cr?: any) {
+        this.requestMouse(priority, () => {
+            if (!this.rightDown) return false;
+            return action();
+        }, cr)
+    }
+
     cancelMouseRequest(cr: any) {
-        let index = this.clickRequests.indexOf(cr);
+        let index = this.clickRequests.findIndex(f => f.cancelationReference == cr);
         if (index == -1) return;
         this.clickRequests.splice(index, 1);
     }

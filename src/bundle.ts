@@ -115,6 +115,10 @@ const bundle = {
     {
       alias: "turret",
       src: "./img/turret.png"
+    },
+    {
+      alias: "tutorial",
+      src: "./img/tutorial.png"
     }
   ]
 } as const;

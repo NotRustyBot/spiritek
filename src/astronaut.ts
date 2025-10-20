@@ -10,7 +10,7 @@ import { RangeRepeller } from "./repeller";
 import { Spirit } from "./spirit";
 import { ObjectOptionsData } from "./ui/objectOptions";
 import { itemDefinition, ItemType } from "./items";
-import { AstronautPickupItem, AstronautGrabFlare, AstronautMove, AstronautPlaceDrill, AstronautPlaceInstallation, AstronautThrowFlare, AstronautTossGrabbedFlare, Order, OrderManager } from "./orderManager";
+import { AstronautPickupItem, AstronautGrabFlare, AstronautMove, AstronautPlaceDrill, AstronautPlaceInstallation, AstronautThrowFlare, AstronautTossGrabbedFlare, Order, OrderManager, AstronautOrder } from "./orderManager";
 import { FlareCore, KillFlare, RepellFlare } from "./flare";
 import { SpotlightInstallation, TurretInstallation } from "./installation";
 import { Drill } from "./drill";
@@ -47,17 +47,6 @@ export class Astronaut extends CoreObject implements ISelectable {
         const actions = [];
 
         if (!this.incapacitated) {
-
-            actions.push({
-                name: "Move",
-                icon: "img/astronaut.png",
-                active: () => (game.orderManager.currentOrder instanceof AstronautMove),
-                action: () => {
-                    const order = new AstronautMove(this);
-                    game.orderManager.newOrder(order);
-                },
-            })
-
             if (this.itemCount(ItemType.ConstructionParts) > 0) {
                 actions.push({
                     name: "Build Spotlight",
@@ -80,29 +69,7 @@ export class Astronaut extends CoreObject implements ISelectable {
                 })
             }
 
-
-            if (this.itemCount(ItemType.DrillParts) > 0) {
-                actions.push({
-                    name: "Build Drill",
-                    icon: "img/drill.png",
-                    active: () => (game.orderManager.currentOrder instanceof AstronautPlaceDrill),
-                    action: () => {
-                        const order = new AstronautPlaceDrill(this);
-                        game.orderManager.newOrder(order);
-                    },
-                })
-            }
-            if (this.grabbedFlare == undefined) {
-                actions.push({
-                    name: "Grab Flare",
-                    icon: "img/flare.png",
-                    active: () => (game.orderManager.currentOrder instanceof AstronautGrabFlare),
-                    action: () => {
-                        const order = new AstronautGrabFlare(this);
-                        game.orderManager.newOrder(order);
-                    },
-                })
-            } else {
+            if (this.grabbedFlare != undefined) {
                 actions.push({
                     name: "Toss Flare",
                     icon: "img/flare.png",
@@ -152,6 +119,11 @@ export class Astronaut extends CoreObject implements ISelectable {
 
         if (item == ItemType.KillFlare) {
             const order = new AstronautThrowFlare(this, KillFlare, item);
+            game.orderManager.newOrder(order);
+        }
+
+        if (item == ItemType.DrillParts) {
+            const order = new AstronautPlaceDrill(this);
             game.orderManager.newOrder(order);
         }
     }
@@ -312,7 +284,6 @@ export class Astronaut extends CoreObject implements ISelectable {
             this.orderQueue.shift()?.execute();
         }
 
-
         this.attractor.position.set(this);
 
         if (this.grabbedFlare) {
@@ -347,11 +318,11 @@ export class Astronaut extends CoreObject implements ISelectable {
         super.destroy();
         this.sprite.destroy();
         this.overlaySprite.destroy();
-        this.cancelOrders();
         this.attention.destroy();
         if (this.operatedDrill) this.operatedDrill.operator = undefined;
         if (this.grabbedFlare) this.grabbedFlare.grabbedBy = undefined;
         this.cancelOrders();
+        if(game.orderManager.currentOrder && game.orderManager.currentOrder instanceof AstronautOrder) game.orderManager.currentOrder.cancel();
         this.attractor.destroy();
         if (game.selected == this) {
             game.selected = undefined;

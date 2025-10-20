@@ -23,6 +23,7 @@ import { Random } from "random";
 import { LevelManager } from "./levelManager";
 import { AudioManager } from "./audioManager";
 import { ShaderMesh } from "./lighting/shaderMesh";
+import { DotFilter, DropShadowFilter, GlowFilter, PixelateFilter } from "pixi-filters";
 
 export let game: Game;
 
@@ -69,6 +70,7 @@ export class Game {
         projectile: new Container(),
         spirit: new Container(),
         overlay: new Container(),
+        rangeOverlay: new Container(),
         attention: new Container(),
         transitionContainer: new Container(),
     }
@@ -87,7 +89,7 @@ export class Game {
     hovered: ISelectable | undefined = undefined;
 
     shadowCasterTexture: RenderTexture;
-    lightRenderSprite!:Sprite;
+    lightRenderSprite!: Sprite;
 
     system!: System;
 
@@ -105,7 +107,7 @@ export class Game {
             Lightmap.resize();
             Shadowmap.resize();
             this.shadowCasterTexture.resize(window.innerWidth, window.innerHeight);
-            
+
             //weird trick to force the sprite to resize to Lightmap resolution
             this.lightRenderSprite.texture = Texture.WHITE;
             this.lightRenderSprite.texture = Lightmap.texture;
@@ -134,10 +136,14 @@ export class Game {
         this.containers.world.addChild(this.containers.spirit);
         this.containers.world.addChild(this.debugGraphics);
         this.containers.world.addChild(this.containers.overlay);
+        this.containers.world.addChild(this.containers.rangeOverlay);
         this.containers.world.addChild(this.containers.attention);
 
         this.containers.light.filters = [new BlurFilter({})]
         this.containers.overlay.alpha = 0.25;
+
+        this.containers.rangeOverlay.filters = [new DropShadowFilter({alpha: 1})]
+        this.containers.rangeOverlay.alpha = 0.1;
 
         for (let index = 0; index < 100; index++) {
             this.dtHistory.push(16);
@@ -217,6 +223,13 @@ export class Game {
             } else {
                 this.hovered?.unhover?.();
                 this.hovered = undefined;
+
+                if (this.controls.clicked) {
+                    this.orderManager.cancel();
+                    this.selected?.unselect?.();
+                    this.selected = undefined;
+                    game.uiManager.updateObjectOptions();
+                }
             }
             return false;
         });
@@ -229,12 +242,6 @@ export class Game {
 
         this.camera.update();
         this.controls.update();
-        if (this.controls.rightDown) {
-            this.orderManager.cancel();
-            this.selected?.unselect?.();
-            this.selected = undefined;
-            game.uiManager.updateObjectOptions();
-        }
 
         for (const obj of [...this.objects.getAll("drawable")]) {
             obj.draw();
@@ -305,3 +312,11 @@ export class Game {
     }
 }
 
+
+
+export const rangeSettings = {
+    repel: 0xffaa00,
+    kill: 0xff5555,
+    attract: 0xff55ff,
+    width: 5,
+}
