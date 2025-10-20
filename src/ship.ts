@@ -164,10 +164,10 @@ export class Ship extends CoreObject implements ISelectable {
             this.resist -= game.dt * 4;
         };
 
-        this.spotlightL = new ShipFloodlight({ x: -50, y: 100 }, this);
-        this.spotlightR = new ShipFloodlight({ x: -50, y: -100 }, this);
+        this.spotlightL = new ShipFloodlight({ x: -120, y: 208 }, this);
+        this.spotlightR = new ShipFloodlight({ x: -120, y: -208 }, this);
 
-        this.turret = new ShipTurret({ x: 300, y: 0 }, this);
+        this.turret = new ShipTurret({ x: 125, y: 0 }, this);
         this.turret.turret.range = 1500;
         this.turret.turret.updateRanges();
 
