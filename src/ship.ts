@@ -50,6 +50,16 @@ export class Ship extends CoreObject implements ISelectable {
         const actions: ObjectOptionsData["actions"] = new Array();
 
         actions.push({
+            name: "Move",
+            icon: "img/ship.png",
+            active: () => (game.orderManager.currentOrder instanceof MoveTo),
+            action: () => {
+                const order = new MoveTo();
+                game.orderManager.newOrder(order);
+            }
+        });
+
+        actions.push({
             name: "Translate",
             icon: "img/ship.png",
             active: () => (game.orderManager.currentOrder instanceof TranslateTo),

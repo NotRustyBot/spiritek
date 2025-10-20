@@ -55,7 +55,7 @@ export class LevelManager extends CoreObject {
         if (this.isTransition && this.shipSkin) {
             if (!this.isTransitionEnding && this.animationX > game.camera.width / 2) this.animationX -= game.dt * 1000;
             if (this.isTransitionEnding && this.animationX > -1000) this.animationX -= game.dt * 1000;
-            this.shipSkin.position.y = game.camera.height - 50 + Math.sin(game.time * 20) ** 4 * 4;
+            this.shipSkin.position.y = game.camera.height/2 - 50 + Math.sin(game.time * 20) ** 4 * 4;
             this.shipSkin.position.x = this.animationX + Math.sin(game.time * 0.5) ** 3 * 200;
             this.shipSkin.rotation = Math.sin(game.time * 10) ** 4 * 0.01 + Math.PI;
         } else if (game.ship.resist <= 0 && !game.pause) {
@@ -170,7 +170,7 @@ class TutorialLevel extends Level {
         this.sprite = new Sprite(asset("tutorial"));
         game.containers.overlay.addChild(this.sprite);
         this.sprite.anchor.set(0.5);
-        this.sprite.position.set(-700, 80);
+        this.sprite.position.set(-900, 80);
         this.sprite.scale.set(6);
         this.sprite.visible = false;
 
@@ -313,7 +313,7 @@ class Level2 extends Level {
                 }
             },
             {
-                time: 10, during: () => {
+                time: 30, during: () => {
                     game.waveManager.spawnClocky.limit = 0.5 + 2.5 * (1 - this.clocky.progress)
                 }
             },
@@ -321,6 +321,8 @@ class Level2 extends Level {
                 time: 30,
                 tick: () => {
                     game.audioManager.voiceline("voice-s_shifting1")
+                    game.audioManager.music("music-labyrinth");
+
 
                 }
             },
@@ -363,7 +365,9 @@ class Level2 extends Level {
             },
         ]).autoTick();
 
-        game.audioManager.music("music-labyrinth");
+        game.audioManager.music("music-fog");
+
+
     }
 
 

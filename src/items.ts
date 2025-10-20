@@ -15,14 +15,14 @@ export type Inventory = Array<{ item: ItemType, count: number }>;
 
 export const itemDefinition: Record<ItemType, ItemDefinition> = {
     [ItemType.KillFlare]: {
-        name: "Red Flare",
-        icon: "flare",
+        name: "Kill Flare",
+        icon: "flareR",
         stack: 1
     },
 
     [ItemType.RepellFlare]: {
-        name: "Yellow Flare",
-        icon: "flare",
+        name: "Repell Flare",
+        icon: "flareY",
         stack: 2
     },
 

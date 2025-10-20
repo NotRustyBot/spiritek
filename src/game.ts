@@ -262,7 +262,7 @@ export class Game {
         }
 
         for (const obj of [...this.objects.getAll("debug")]) {
-            //obj.debug(this.debugGraphics);
+           // obj.debug(this.debugGraphics);
         }
 
     }

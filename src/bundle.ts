@@ -29,6 +29,14 @@ const bundle = {
       src: "./img/flare.png"
     },
     {
+      alias: "flareR",
+      src: "./img/flareR.png"
+    },
+    {
+      alias: "flareY",
+      src: "./img/flareY.png"
+    },
+    {
       alias: "floodlight",
       src: "./img/floodlight.png"
     },
@@ -111,6 +119,14 @@ const bundle = {
     {
       alias: "stone_2",
       src: "./img/stone_2.png"
+    },
+    {
+      alias: "stone_3",
+      src: "./img/stone_3.png"
+    },
+    {
+      alias: "stone_3_ore",
+      src: "./img/stone_3_ore.png"
     },
     {
       alias: "turret",

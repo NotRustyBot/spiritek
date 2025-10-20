@@ -25,10 +25,6 @@ const bundle_sound = {
       src: "./audio/music/labyrinth.ogg"
     },
     {
-      alias: "music-mayak",
-      src: "./audio/music/mayak.ogg"
-    },
-    {
       alias: "music-nowYouAre",
       src: "./audio/music/nowYouAre.ogg"
     },
