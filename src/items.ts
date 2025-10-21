@@ -21,7 +21,7 @@ export const itemDefinition: Record<ItemType, ItemDefinition> = {
     },
 
     [ItemType.RepellFlare]: {
-        name: "Repell Flare",
+        name: "Repel Flare",
         icon: "flareY",
         stack: 2
     },

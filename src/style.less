@@ -30,10 +30,10 @@ body {
     flex-direction: column;
     border-top-right-radius: 10px;
     gap: 5px;
-    color:rgb(183, 183, 183);
+    color: rgb(183, 183, 183);
     position: absolute;
-    bottom:0;
-    left:0;
+    bottom: 0;
+    left: 0;
 }
 
 #object-options>h1,
@@ -45,7 +45,7 @@ body {
     font-size: 1.5em;
     letter-spacing: 0.1em;
     margin: 0.5em 0em;
-    color:white;
+    color: white;
 }
 
 #object-options>h2 {
@@ -85,7 +85,7 @@ body {
 
 .object-action.active {
     background-color: #56702e;
-    color:white;
+    color: white;
     animation: pulse .8s alternate infinite ease-in-out;
 }
 
@@ -235,10 +235,36 @@ body {
 
 #mission-result {
     position: absolute;
-    top: 0;
+    top: 100px;
+    display: flex;
+    width: 100%;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    padding: 30px;
+    height: 200px;
+    transition: heigh 300ms;
+    background: #000a;
+
+
+    button {
+        display: block;
+        color: #fff;
+        padding: 10px;
+        margin: 5px;
+        border: #000 solid 3px;
+        background: #000a;
+        cursor: pointer;
+
+        &:hover {
+        background: #555a;
+
+        }
+    }
 }
 
 .objective-result {
+
     display: flex;
     animation: slide 1s;
 
@@ -272,6 +298,27 @@ body {
 
     &__value {
         color: #ffaa00;
+    }
+}
+
+#talk {
+    position: absolute;
+    bottom: 0;
+    left: 500px;
+    max-width: 50vw;
+    display: flex;
+    flex-direction: column;
+}
+
+.talk-container{
+    display: flex;
+    gap: 10px;
+    align-items: baseline;
+
+    .talk-name{
+        font-size: 18px;
+        font-style: italic;
+        width: 100px;
     }
 }
 

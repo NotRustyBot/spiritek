@@ -153,3 +153,19 @@ export class ExitStrategy extends Objective {
         this.sprite.destroy();
     }
 }
+
+
+export class UnderstandTheRadix extends Objective {
+
+    update(): void {
+        this.updateUi({
+            desc: "Understand the Radix",
+            status: "",
+            completed: false
+        });
+    }
+
+    getRating(): ObjectiveReportData | undefined {
+        return undefined;
+    }
+}

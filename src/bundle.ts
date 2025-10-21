@@ -93,6 +93,10 @@ const bundle = {
       src: "./img/projectile.png"
     },
     {
+      alias: "radix",
+      src: "./img/radix.png"
+    },
+    {
       alias: "ritual",
       src: "./img/ritual.png"
     },

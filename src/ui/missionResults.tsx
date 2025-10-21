@@ -46,7 +46,7 @@ export function MissionResults(data: MissionReportData) {
             game.levelManager.nextLevel();
             game.levelManager.endTransition();
         }
-    }>oof</button></div>
+    }>Continue</button></div>
     setTimeout(() => { el.appendChild(otherUi) }, delay + 1000);
 
 

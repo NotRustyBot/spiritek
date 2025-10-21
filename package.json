@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite --host",
-    "build": "tsc && vite build",
+    "build": "vite build",
+    "upload": "npm run build && 7z a -tzip static.zip .\\dist\\* && butler push static.zip notrustybot/spiritek:web",
     "assets": "npx tsx bundler.ts"
   },
   "devDependencies": {

@@ -25,7 +25,7 @@ export type ObjectOptionsData = {
 
 
 
-export function ObjectOptions(data?: ObjectOptionsData) {
+export function ObjectOptions(data?: ObjectOptionsData | undefined) {
     if (data == undefined) return <div id="object-options" style="display:none;" />
 
     const sections = new Array<HTMLElement>();
@@ -54,12 +54,12 @@ export function ObjectOptions(data?: ObjectOptionsData) {
             <h2>Actions</h2>,
             <div class="option-container">
                 {data.actions?.map((d) => {
-                    let ref: HTMLDivElement;
+                    let ref: HTMLElement;
                     return <div class={
                         "object-action"
                         + (d.active?.() ? " active" : "")
                     }
-                        ref={(e: HTMLDivElement) => { ref = e }}
+                        ref={(e) => { ref = e }}
                         onClick={() => {
                             d.action();
                         }}
@@ -78,11 +78,11 @@ export function ObjectOptions(data?: ObjectOptionsData) {
             <div class="items-container">
                 {
                     data.items.map((d) => {
-                        let ref: HTMLDivElement;
+                        let ref: HTMLElement;
                         let def = itemDefinition[d.item];
                         return <div class="item-container">
                             <div class="item-action"
-                                ref={(e: HTMLDivElement) => { ref = e }}
+                                ref={(e: HTMLElement) => { ref = e }}
                                 onClick={() => {
                                     d.action();
                                 }}

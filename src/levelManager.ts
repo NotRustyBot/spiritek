@@ -7,11 +7,12 @@ import lvl2 from "./scenes/objects.json"
 import { Asteroid } from "./asteroid";
 import { ItemType } from "./items";
 import { Vector } from "./vector";
-import { CrewOnBoard, ExitStrategy, MiningObjective, ObjectiveManager, RecoverMiningEquipment } from "./objectives";
+import { CrewOnBoard, ExitStrategy, MiningObjective, ObjectiveManager, RecoverMiningEquipment, UnderstandTheRadix } from "./objectives";
 import { CoreObject } from "./core";
 import { Clocky } from "./clocky";
 import { Sprite } from "pixi.js";
 import { asset } from "./util";
+import { GlowFilter, GlowFilterOptions } from "pixi-filters";
 
 
 export type MissionReportData = {
@@ -55,10 +56,10 @@ export class LevelManager extends CoreObject {
         if (this.isTransition && this.shipSkin) {
             if (!this.isTransitionEnding && this.animationX > game.camera.width / 2) this.animationX -= game.dt * 1000;
             if (this.isTransitionEnding && this.animationX > -1000) this.animationX -= game.dt * 1000;
-            this.shipSkin.position.y = game.camera.height/2 - 50 + Math.sin(game.time * 20) ** 4 * 4;
+            this.shipSkin.position.y = game.camera.height / 2 + 100 + Math.sin(game.time * 20) ** 4 * 4;
             this.shipSkin.position.x = this.animationX + Math.sin(game.time * 0.5) ** 3 * 200;
             this.shipSkin.rotation = Math.sin(game.time * 10) ** 4 * 0.01 + Math.PI;
-        } else if (game.ship.resist <= 0 && !game.pause) {
+        } else if ((game.ship && game.ship.resist <= 0) && !game.pause) {
             game.pause = true;
             setTimeout(() => {
                 game.pause = false;
@@ -176,6 +177,8 @@ class TutorialLevel extends Level {
 
         Clocky.once(3).autoTick().tick = () => {
             game.audioManager.voiceline("voice-s_look");
+            game.uiManager.addTalk("Shaman", "Take look at this. My recommendation to deal with the spirits.");
+
             this.sprite.visible = true;
         };
     }
@@ -187,6 +190,9 @@ class TutorialLevel extends Level {
         if (!this.wasDrillDeployed && game.objectiveManager.minedOre > 0) {
             this.wasDrillDeployed = true;
             game.audioManager.music("music-fog");
+            game.audioManager.voiceline("voice-e_wave");
+            game.uiManager.addTalk("Engineer", "A wave is coming!");
+
 
             const clocky = Clocky.once(10).autoTick();
             clocky.during = () => { game.waveManager.spawnClocky.limit = 0.5 + 2.5 * (1 - clocky.progress) };
@@ -235,6 +241,8 @@ class Level1 extends Level {
                 time: 60,
                 tick: () => {
                     game.audioManager.voiceline("voice-s_presence")
+                    game.uiManager.addTalk("Shaman", "Their presence grows stronger.");
+
                 }
             },
             {
@@ -246,6 +254,8 @@ class Level1 extends Level {
                 time: 60,
                 tick: () => {
                     game.audioManager.voiceline("voice-e_more")
+                    game.uiManager.addTalk("Engineer", "There's more headed our way!");
+
 
                 }
             },
@@ -258,6 +268,8 @@ class Level1 extends Level {
                 time: 60,
                 tick: () => {
                     game.audioManager.voiceline("voice-s_overstay")
+                    game.uiManager.addTalk("Shaman", "We overstayed over wellcome!");
+
                 }
             },
             {
@@ -310,6 +322,7 @@ class Level2 extends Level {
                 time: 60,
                 tick: () => {
                     game.audioManager.voiceline("voice-s_presence")
+                    game.uiManager.addTalk("Shaman", "Their presence grows stronger.");
                 }
             },
             {
@@ -322,8 +335,7 @@ class Level2 extends Level {
                 tick: () => {
                     game.audioManager.voiceline("voice-s_shifting1")
                     game.audioManager.music("music-labyrinth");
-
-
+                    game.uiManager.addTalk("Shaman", "The flow is shifting");
                 }
             },
             {
@@ -331,7 +343,8 @@ class Level2 extends Level {
                     game.waveManager.angle = this.clocky.progress;
                 },
                 tick: () => {
-                    game.audioManager.voiceline("voice-e_more")
+                    game.audioManager.voiceline("voice-e_more");
+                    game.uiManager.addTalk("Engineer", "There's more headed our way!");
 
                 }
             },
@@ -344,6 +357,7 @@ class Level2 extends Level {
                 time: 60,
                 tick: () => {
                     game.audioManager.voiceline("voice-s_shifting2")
+                    game.uiManager.addTalk("Shaman", "Flow's course is changing.");
 
                 }
             },
@@ -356,6 +370,7 @@ class Level2 extends Level {
                 time: 60,
                 tick: () => {
                     game.audioManager.voiceline("voice-s_overstay")
+                    game.uiManager.addTalk("Shaman", "We overstayed over wellcome!");
                 }
             },
             {
@@ -380,8 +395,74 @@ class Level2 extends Level {
     }
 }
 
+
+class FinalScreen extends Level {
+    sprite!: Sprite;
+    override load(): void {
+        game.audioManager.music("music-nowYouAre");
+        game.objectiveManager.init([new UnderstandTheRadix()]);
+
+        setTimeout(() => {
+            game.audioManager.voiceline("voice-e_what");
+            game.uiManager.addTalk("Engineer", "What is this...");
+
+        }, 1000)
+
+
+        setTimeout(() => {
+            game.audioManager.voiceline("voice-s_arrived");
+            game.uiManager.addTalk("Shaman", "It appears we have arrived");
+        }, 4000)
+
+        setTimeout(() => {
+            game.uiManager.addTalk("", "The source of the souls is before you");
+        }, 6000)
+
+        setTimeout(() => {
+            game.uiManager.addTalk("", "A collapsing Matrioshka brain, a star-sized computer.");
+        }, 10_000)
+
+        setTimeout(() => {
+            game.uiManager.addTalk("", "Trillions of alien souls were enjoying their life in a simulation...");
+        }, 16_000)
+
+        setTimeout(() => {
+            game.uiManager.addTalk("", "...until it fell apart.");
+        }, 22_000)
+
+        setTimeout(() => {
+            game.uiManager.addTalk("", "Now they are bound to haunt the galaxy, for the rest of time.");
+        }, 30_000)
+        setTimeout(() => {
+            game.uiManager.addTalk("", "");
+        }, 36_000)
+
+        setTimeout(() => {
+            game.uiManager.addTalk("", "Happy Halloween.");
+        }, 42_000)
+
+        game.waveManager.spawnClocky.limit = 0.01;
+        game.waveManager.spawnClocky.stop = true;
+
+
+        this.sprite = new Sprite(asset("radix"));
+        this.sprite.anchor.set(0.5);
+        game.containers.overlay.addChild(this.sprite);
+
+
+    }
+
+
+    update(): void {
+        game.containers.world.scale.set(Math.sin(game.time * 2) * 0.01 + 1);
+        this.sprite.alpha = Math.sin(game.time * 1) / 2 + 1
+        game.camera.position.set(0, 0);
+    }
+}
+
 const levels = [
     TutorialLevel,
     Level1,
     Level2,
+    FinalScreen,
 ]

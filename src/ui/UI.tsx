@@ -20,6 +20,10 @@ export class UiManager {
         return document.getElementById("log-list")!;
     }
 
+    get talk(): HTMLElement {
+        return document.getElementById("talk")!;
+    }
+
     get app() {
         return document.getElementById("app")!;
     }
@@ -42,6 +46,20 @@ export class UiManager {
         this.logList.appendChild(Log(logData));
         let children = Array.from(this.logList.children);
         for (let index = children.length - 5; index >= 0; index--) {
+            const child = children[index];
+            if (child.classList.contains("removal")) continue;
+            removeLog(child as HTMLElement);
+        }
+    }
+
+    addTalk(name: string, text: string) {
+        if (!this.talk) return;
+        this.talk.appendChild(<div class="talk-container">
+            <div class="talk-name">{name}</div>
+            <div class="talk-content">{text}</div>
+        </div>);
+        let children = Array.from(this.talk.children);
+        for (let index = children.length - 3; index >= 0; index--) {
             const child = children[index];
             if (child.classList.contains("removal")) continue;
             removeLog(child as HTMLElement);
@@ -72,10 +90,12 @@ export function removeLog(child: HTMLElement) {
     }, 500);
 }
 
+
 export function UI() {
     return <div id="app">
         <ObjectOptions />
         <Objectives data={[]} />
         <div id="log-list"></div>
+        <div id="talk"></div>
     </div>
 }
